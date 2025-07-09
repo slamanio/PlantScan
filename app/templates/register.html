@@ -3,7 +3,13 @@
 <head><title>Registrar</title></head>
 <body>
     <h2>Registrar Novo Usuário</h2>
-    <form action="/register" method="post">
+
+  {% if mensagem %}
+  <p style="color: red;">{{ mensagem | safe }}</p>
+{% endif %}
+
+
+    <form action="{{ url_for('register_form') }}" method="post">
   <input type="text" name="full_name" placeholder="Nome completo" required>
   <input type="email" name="email" placeholder="Email" required>
   <input type="password" name="password" placeholder="Senha" required>

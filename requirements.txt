@@ -5,3 +5,4 @@ sqlalchemy
 pymysql
 passlib[bcrypt]
 python-multipart
+itsdangerous>=2.0
