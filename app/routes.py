@@ -97,6 +97,7 @@ def login_user(
     if user and bcrypt.verify(password, user.password):
         request.session["user_id"] = user.id
         request.session["user_name"] = user.full_name
+        request.session["user_email"] = user.email
         return RedirectResponse(url="/homepage", status_code=302)
     
     return templates.TemplateResponse("login.html", {
@@ -115,6 +116,7 @@ def homepage(request: Request):
         return templates.TemplateResponse("homepage.html", {
             "request": request,
             "user_name": user_name
+
         })
     return RedirectResponse(url="/login", status_code=302)
 
@@ -123,3 +125,56 @@ def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/login", status_code=302)
 
+@router.get("/update", name="update")
+def update(request: Request):
+    user_name = request.session.get("user_name")
+    user_email = request.session.get("user_email")
+
+    return templates.TemplateResponse("update.html", {
+        "request": request,
+        "user_name": user_name,
+        "user_email": user_email
+    })
+@router.post("/update", name="update_user")
+def update_user(
+    request: Request,
+    full_name: str = Form(""),
+    email: str = Form(""),
+    db: Session = Depends(get_db)
+):
+    user_id = request.session.get("user_id")
+    
+    if not user_id:
+        return RedirectResponse("/login", status_code=302)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if user:
+        # Apenas atualiza se o valor foi preenchido no formulário
+        if full_name.strip():
+            user.full_name = full_name
+            request.session["user_name"] = full_name  # atualiza a sessão
+
+        if email.strip():
+            user.email = email
+            request.session["user_email"] = email  # atualiza a sessão
+
+        db.commit()
+
+    return RedirectResponse("/homepage", status_code=302)
+
+@router.post("/delete-account", name="delete_account")
+def delete_account(request: Request, db: Session = Depends(get_db)):
+    user_id = request.session.get("user_id")
+
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=302)
+
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if user:
+        db.delete(user)
+        db.commit()
+        request.session.clear()  # encerra a sessão
+
+    return RedirectResponse(url="/login", status_code=302)

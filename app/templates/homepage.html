@@ -2,9 +2,9 @@
 <html>
 <head><title>Home</title></head>
 <body>
-    <h1>Bem-vindo, {{ user_name }}!</h1>
+    <h1>Bem-vindo, {{ user_name }} seu email é {{ user_email }} seu id é {{ user_id }}!</h1>
 <a href="{{ url_for('logout') }}">Sair</a>
-
+<a href="{{ url_for('update')}}"> update </a>
 
 </body>
 </html>

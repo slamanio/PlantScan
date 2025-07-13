@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Home</title></head>
+<body>
+    <h1>Bem-vindo, {{ user_name }}!</h1>
+
+    <form action="{{ url_for('update') }}" method="post">
+  <input type="text" name="full_name" placeholder="{{user_name}}">
+  <input type="email" name="email" placeholder="{{user_email}}">
+        <button type="submit">Registrar</button>
+</form>
+<form action="{{ url_for('delete_account') }}" method="post">
+    <button type="submit">Deletar minha conta</button>
+</form>
+</body>
+</html>
