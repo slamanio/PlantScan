@@ -25,7 +25,7 @@ def get_db():
     finally:
         db.close()
 #Homepage deslogada
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse, name="index")
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
@@ -109,7 +109,7 @@ def login_user(
 #Área do cliente
 
 
-@router.get("/homepage", response_class=HTMLResponse)
+@router.get("/homepage", response_class=HTMLResponse, name="home")
 def homepage(request: Request):
     user_name = request.session.get("user_name")
     if user_name:
@@ -148,13 +148,18 @@ def update_user(
         return RedirectResponse("/login", status_code=302)
 
     user = db.query(User).filter(User.id == user_id).first()
+    usuario_existente = db.query(User).filter_by(email=email).first()
     
     if user:
         # Apenas atualiza se o valor foi preenchido no formulário
         if full_name.strip():
             user.full_name = full_name
             request.session["user_name"] = full_name  # atualiza a sessão
-
+        if usuario_existente:
+            return templates.TemplateResponse("update.html", {
+            "request": request,
+            "mensagem": "Este email já está cadastrado no sistema."
+        })
         if email.strip():
             user.email = email
             request.session["user_email"] = email  # atualiza a sessão

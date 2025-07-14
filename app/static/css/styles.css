@@ -3,18 +3,15 @@
   margin:0;
   box-sizing:border-box;
 }
+
 @font-face {
-  font-family:"bebas-neue";
-  src:url(fonts/Bebas-Neue/BebasNeue-Regular.ttf);
-}
-@font-face {
-  font-family:"jost";
-  src:url(fonts/Jost/Jost-Italic-VariableFont_wght.ttf);
+    font-family: 'Jost';
+    src: url('/static/assets/fonts/Jost/Jost-Italic-VariableFont_wght.ttf');
 }
 body {
   height:100vh;
   overflow-x:hidden;
-  font-family:'jost',sans-serif;
+  background-image: url('/static/assets/imgs/prin.jpg');
 }
 .container {
   min-height:100vh;
@@ -79,7 +76,7 @@ body {
 }.info {
   height:95vh;
   width:100%;
-  background-image:url("imgs/prin.jpg");
+  background-image:url("/static//assets/imgs/prin.jpg");
   background-repeat:no-repeat;
   background-size:cover;
   background-position:center;
@@ -167,16 +164,16 @@ body {
 }
 /* IMAGENS INDIVIDUAIS (aqui sim definimos os backgrounds diferentes) */
 .box::before {
-  background-image:url('imgs/boxes/farmer.jpg');
+  background-image:url('/static/assets/imgs/boxes/farmer.jpg');
 }
 .box2::before {
-  background-image:url('imgs/boxes/farm.jpg');
+  background-image:url('/static/assets/imgs/boxes/farm.jpg');
 }
 .box3::before {
-  background-image:url('imgs/boxes/urtiga.jpg');
+  background-image:url('/static/assets/imgs/boxes/urtiga.jpg');
 }
 .box4::before {
-  background-image:url('imgs/boxes/robo.jpg');
+  background-image:url('/static/assets/imgs/boxes/robo.jpg');
 }
 /* Regras COMUNS para::after e .box-text */
 .box::after,.box2::after,.box3::after,.box4::after {
