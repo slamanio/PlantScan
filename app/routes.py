@@ -1,30 +1,48 @@
-from fastapi import APIRouter, Request, Form, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Form, Depends, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from .database import SessionLocal
+from transformers import BlipProcessor, BlipForConditionalGeneration, pipeline
+from PIL import Image
+import io
 from .models import User
+from .models import PlantSample
 from . import models, database
 from passlib.hash import bcrypt
 import re
+from deep_translator import GoogleTranslator
+
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+# AI
+
+processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+
+
+
+
 #Validação da senha, 8 caractéres e pelo menos uma letra.
+
 def validar_senha(senha):
     padrao = r'^(?=.*[A-Za-z]).{8,}$'
     return bool(re.match(padrao, senha))
 
 #Conexão com o banco.
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 #Homepage deslogada
+
 @router.get("/", response_class=HTMLResponse, name="index")
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -135,6 +153,9 @@ def update(request: Request):
         "user_name": user_name,
         "user_email": user_email
     })
+
+# área de atualização de cadastro
+
 @router.post("/update", name="update_user")
 def update_user(
     request: Request,
@@ -151,10 +172,10 @@ def update_user(
     usuario_existente = db.query(User).filter_by(email=email).first()
     
     if user:
-        # Apenas atualiza se o valor foi preenchido no formulário
+        
         if full_name.strip():
             user.full_name = full_name
-            request.session["user_name"] = full_name  # atualiza a sessão
+            request.session["user_name"] = full_name  
         if usuario_existente:
             return templates.TemplateResponse("update.html", {
             "request": request,
@@ -162,11 +183,13 @@ def update_user(
         })
         if email.strip():
             user.email = email
-            request.session["user_email"] = email  # atualiza a sessão
+            request.session["user_email"] = email  
 
         db.commit()
 
     return RedirectResponse("/homepage", status_code=302)
+
+# Exclusão de conta
 
 @router.post("/delete-account", name="delete_account")
 def delete_account(request: Request, db: Session = Depends(get_db)):
@@ -180,6 +203,31 @@ def delete_account(request: Request, db: Session = Depends(get_db)):
     if user:
         db.delete(user)
         db.commit()
-        request.session.clear()  # encerra a sessão
+        request.session.clear()  
 
     return RedirectResponse(url="/login", status_code=302)
+
+# Resposta da Inteligência artificial
+
+@router.post("/analyze")
+async def analyze_with_blip(file: UploadFile = File(...)):
+    
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+    
+    inputs = processor(images=image, return_tensors="pt")
+    out = model.generate(**inputs)
+    caption_en = processor.decode(out[0], skip_special_tokens=True)
+
+    to_translate = caption_en
+    translated = GoogleTranslator(source='auto', target='portuguese').translate(to_translate)
+        
+        
+    return JSONResponse(content={"description": translated})
+
+
+
+
+
+

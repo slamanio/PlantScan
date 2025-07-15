@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat Expandido com Imagem</title>
+  <link rel="shortcut icon" href="/static/assets/imgs/chip.png">
+  <title>PlantScan</title>
   <style>
     * {
       box-sizing: border-box;
@@ -59,6 +60,7 @@
     }
 
     .sent {
+      content: "Planty";
       align-self: flex-end;
       background: #e1ffc7;
       border-color: #4CAF50;
@@ -87,25 +89,32 @@
     }
 
     .input-area {
-      padding: 15px 20px;
-      display: flex;
-      align-items: center;
-      background: #fff;
-      border-top: 1px solid #ddd;
-    }
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: #fff;
+  border-top: 1px solid #ddd;
+}
 
-    .file-label {
-      flex: 1;
-      text-align: center;
-      padding: 12px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      transition: background 0.3s;
-      font-size: 1em;
-    }
+.action-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 20px;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.action-btn:hover {
+  background-color: #45a049;
+}
+
+
+    
 
     .file-label:hover {
       background: #45a049;
@@ -131,7 +140,12 @@
     <div class="chat-messages" id="chatMessages"></div>
 
     <div class="input-area">
-      <label class="file-label" for="imageInput">📷 Escolher imagem</label>
+      <button class="action-btn" onclick="handleAction('update')">👤 Perfil</button>
+  <button class="action-btn" onclick="handleAction('logout')">🚪 Sair</button>
+  <button class="action-btn" onclick="handleAction('scan')">📷 Escanear</button>
+  
+</div>
+
       <input type="file" id="imageInput" accept="image/*" />
     </div>
   </div>
@@ -156,24 +170,85 @@
     }
 
     document.getElementById("imageInput").addEventListener("change", function () {
-      const file = this.files[0];
-      if (!file) return;
+  const file = this.files[0];
+  if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        appendMessage(e.target.result, "sent", true);
-      };
-      reader.readAsDataURL(file);
+  const reader = new FileReader();
 
-      this.value = ""; // permite reenvio da mesma imagem
-    });
+  reader.onload = async function (e) {
+    const base64Image = e.target.result;
 
-    // Mensagem automática da "outra pessoa"
+    appendMessage(base64Image, "sent", true); 
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+  const res = await fetch(`${window.location.origin}/analyze`, {
+    method: "POST",
+    body: formData
+  });
+
+  const contentType = res.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const data = await res.json();
+    console.log("Resposta JSON recebida:", data);
+    const description = data?.description || "🌧️ Erro ao analisar a imagem. Tente de novo!";
+appendMessage(description, "received");
+  } else {
+    const text = await res.text();
+    appendMessage("Plenty recebeu uma resposta inesperada:\n" + text, "received");
+  }
+} catch (error) {
+  appendMessage("Oops! Erro ao analisar a imagem: " + error.message, "received");
+}
+  };
+
+  reader.readAsDataURL(file);
+  this.value = "";
+});
+
+   
     window.onload = () => {
       setTimeout(() => {
-        appendMessage("Oi {{user_name}}! Precisa de ajuda com algo? Pode enviar uma imagem se quiser.", "received");
+        appendMessage("Oi {{user_name}}! Eu sou o Plenty! Precisa de ajuda com algo?", "received");
       }, 500);
     };
+
+    function handleAction(action) {
+  let message = "";
+
+  switch (action) {
+    case "update":
+      message = "Quero ver meu perfil!";
+      setTimeout(() => {
+        appendMessage("Certo {{user_name}}! Redirecionarei você para seu perfil!.", "received");
+      }, 500);
+        setTimeout(() => {
+    window.location.href = "/" + action;
+  }, 2000);
+      break;
+    case "logout":
+      message = "Quero sair da minha conta.";
+      setTimeout(() => {
+        appendMessage("Certo {{user_name}}! Até a próxima!.", "received");
+      }, 500);
+      setTimeout(() => {
+    window.location.href = "/" + action;
+  }, 2000);
+      break;
+    case "scan":
+  message = "Quero escanear uma planta!";
+  document.getElementById("imageInput").click(); 
+  break;
+  }
+
+  appendMessage(message, "sent");
+
+  
+}
+
   </script>
 </body>
 </html>

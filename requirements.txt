@@ -1,33 +1,19 @@
-# --- FastAPI e servidor ---
 fastapi
 uvicorn[standard]
-
-# --- Templates e HTML ---
 jinja2
-
-# --- Banco de dados e ORM ---
 sqlalchemy
 pymysql
-
-# --- Autenticação e segurança ---
 passlib[bcrypt]
 python-multipart
 itsdangerous>=2.0
 email-validator
-
-# --- Upload e arquivos estáticos ---
 aiofiles
-
-# --- Variáveis de ambiente (.env) ---
 python-dotenv
-
-# --- JWT tokens (opcional, para autenticação futura) ---
 python-jose[cryptography]
-
-# --- Inteligência Artificial / Visão Computacional ---
-tensorflow           # biblioteca principal de deep learning
-numpy                # manipulação de dados/imagens
-pillow               # para abrir/redimensionar imagens
-opencv-python        # (opcional) para manipulação de imagens e webcam
-scikit-learn         # para métricas e modelos clássicos
-matplotlib           # para visualizar resultados
+starlette
+transformers 
+torch 
+torchvision
+sentencepiece
+deep-translator
+pandas
