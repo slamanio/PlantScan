@@ -4,14 +4,17 @@ from .database import Base, engine
 from .routes import router
 from starlette.middleware.sessions import SessionMiddleware
 import secrets
+import google.generativeai as genai
+
+
 
 
 
 Base.metadata.create_all(bind=engine)
 
-
 app = FastAPI()
 app.include_router(router)
+genai.configure(api_key="AIzaSyCUbLzOUvdYZpvwGuZcZSMZ9TIugQ18wEk")
 
 # Css, JS e afins
 

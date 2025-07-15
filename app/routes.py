@@ -6,9 +6,9 @@ from sqlalchemy.exc import IntegrityError
 from .database import SessionLocal
 from transformers import BlipProcessor, BlipForConditionalGeneration, pipeline
 from PIL import Image
+import google.generativeai as genai
 import io
 from .models import User
-from .models import PlantSample
 from . import models, database
 from passlib.hash import bcrypt
 import re
@@ -16,6 +16,7 @@ from deep_translator import GoogleTranslator
 
 
 router = APIRouter()
+genai.configure(api_key="AIzaSyCUbLzOUvdYZpvwGuZcZSMZ9TIugQ18wEk")
 templates = Jinja2Templates(directory="app/templates")
 
 # AI
@@ -210,21 +211,33 @@ def delete_account(request: Request, db: Session = Depends(get_db)):
 # Resposta da Inteligência artificial
 
 @router.post("/analyze")
-async def analyze_with_blip(file: UploadFile = File(...)):
-    
+async def analyze_with_gemini(file: UploadFile = File(...)):
+    # Lê a imagem enviada
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-    
-    inputs = processor(images=image, return_tensors="pt")
-    out = model.generate(**inputs)
-    caption_en = processor.decode(out[0], skip_special_tokens=True)
+    # Cria o modelo Gemini
+    model = genai.GenerativeModel("gemini-2.5-flash")
 
-    to_translate = caption_en
-    translated = GoogleTranslator(source='auto', target='portuguese').translate(to_translate)
-        
-        
-    return JSONResponse(content={"description": translated})
+    # Gera resposta com base na imagem
+    response = model.generate_content(
+        [image, "Analíse a espécie e família da planta ou árvore, retornando um feedback da condição de saúde da planta."],
+        stream=False
+    )
+
+    # Obtém o texto da resposta
+    description = response.text
+
+    # Traduz a resposta para o português
+    translated = GoogleTranslator(source='auto', target='portuguese').translate(description)
+
+    return JSONResponse(content={
+        "status": "sucesso",
+        "mensagem": "Imagem analisada com sucesso.",
+        "description": {
+            "description": translated
+        }
+    })
 
 
 
