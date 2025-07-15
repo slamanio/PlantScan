@@ -221,23 +221,14 @@ async def analyze_with_gemini(file: UploadFile = File(...)):
 
     # Gera resposta com base na imagem
     response = model.generate_content(
-        [image, "Analíse a espécie e família da planta ou árvore, retornando um feedback da condição de saúde da planta."],
-        stream=False
+        [image, "Analise a espécie e família da planta ou árvore presente na imagem.Em seguida, forneça um parecer sobre a condição de saúde da planta.Retorne tudo no seguinte formato JSON, sem explicações adicionais:"
+         ], stream=False
     )
 
     # Obtém o texto da resposta
     description = response.text
 
-    # Traduz a resposta para o português
-    translated = GoogleTranslator(source='auto', target='portuguese').translate(description)
-
-    return JSONResponse(content={
-        "status": "sucesso",
-        "mensagem": "Imagem analisada com sucesso.",
-        "description": {
-            "description": translated
-        }
-    })
+    return JSONResponse(content=(description))
 
 
 

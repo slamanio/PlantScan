@@ -151,25 +151,28 @@
   </div>
 
   <script>
-    function appendMessage(content, type = 'sent', isImage = false) {
-      const messageElement = document.createElement("div");
-      messageElement.className = "message " + type;
+    function appendMessage(content, type = 'sent', isImage = false, isHTML = false) {
+  const messageElement = document.createElement("div");
+  messageElement.className = "message " + type;
 
-      if (isImage) {
-        const img = document.createElement("img");
-        img.src = content;
-        messageElement.appendChild(img);
-      } else {
-        messageElement.textContent = content;
-      }
+  if (isImage) {
+    const img = document.createElement("img");
+    img.src = content;
+    messageElement.appendChild(img);
+  } else if (isHTML) {
+    messageElement.innerHTML = content;
+  } else {
+    messageElement.textContent = content;
+  }
 
-      document.getElementById("chatMessages").appendChild(messageElement);
+  document.getElementById("chatMessages").appendChild(messageElement);
 
-      const chatBox = document.getElementById("chatMessages");
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+  const chatBox = document.getElementById("chatMessages");
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-    document.getElementById("imageInput").addEventListener("change", function () {
+
+document.getElementById("imageInput").addEventListener("change", function () {
   const file = this.files[0];
   if (!file) return;
 
@@ -184,25 +187,37 @@
     formData.append("file", file);
 
     try {
-  const res = await fetch(`${window.location.origin}/analyze`, {
-    method: "POST",
-    body: formData
-  });
+      const res = await fetch(`${window.location.origin}/analyze`, {
+        method: "POST",
+        body: formData
+      });
 
-  const contentType = res.headers.get("content-type") || "";
+      const contentType = res.headers.get("content-type") || "";
 
-  if (contentType.includes("application/json")) {
-    const data = await res.json();
-    console.log("Resposta JSON recebida:", data);
-    const description = data?.description || "🌧️ Erro ao analisar a imagem. Tente de novo!";
-appendMessage(description, "received");
-  } else {
-    const text = await res.text();
-    appendMessage("Plenty recebeu uma resposta inesperada:\n" + text, "received");
-  }
-} catch (error) {
-  appendMessage("Oops! Erro ao analisar a imagem: " + error.message, "received");
-}
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        console.log("Resposta JSON recebida:", data);
+
+        const descricaoOriginal = data;
+
+        if (descricaoOriginal) {
+           const respostaHTML = `
+    <div style="margin-bottom: 5px;">
+      <span style="font-weight: bold; color: #388e3c;">📝 Descrição:</span><br>
+      <span style="display: inline-block; margin-top: 4px;">${descricaoOriginal}</span>
+    </div>`
+          appendMessage(respostaHTML, "received", false, true);
+          
+        } else {
+          appendMessage("⚠️ Resposta incompleta recebida.", "received");
+        }
+      } else {
+        const text = await res.text();
+        appendMessage("📩 Resposta inesperada:\n" + text, "received");
+      }
+    } catch (error) {
+      appendMessage("❌ Erro ao analisar a imagem: " + error.message, "received");
+    }
   };
 
   reader.readAsDataURL(file);
@@ -220,6 +235,7 @@ appendMessage(description, "received");
   let message = "";
 
   switch (action) {
+
     case "update":
       message = "Quero ver meu perfil!";
       setTimeout(() => {
@@ -229,6 +245,7 @@ appendMessage(description, "received");
     window.location.href = "/" + action;
   }, 2000);
       break;
+
     case "logout":
       message = "Quero sair da minha conta.";
       setTimeout(() => {
@@ -238,6 +255,7 @@ appendMessage(description, "received");
     window.location.href = "/" + action;
   }, 2000);
       break;
+
     case "scan":
   message = "Quero escanear uma planta!";
   document.getElementById("imageInput").click(); 
