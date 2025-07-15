@@ -172,6 +172,7 @@
 }
 
 
+
 document.getElementById("imageInput").addEventListener("change", function () {
   const file = this.files[0];
   if (!file) return;
@@ -185,7 +186,7 @@ document.getElementById("imageInput").addEventListener("change", function () {
 
     const formData = new FormData();
     formData.append("file", file);
-
+    appendMessage("Valeu! agora me dê uns segundos para escanear!", "received");
     try {
       const res = await fetch(`${window.location.origin}/analyze`, {
         method: "POST",
@@ -198,19 +199,36 @@ document.getElementById("imageInput").addEventListener("change", function () {
         const data = await res.json();
         console.log("Resposta JSON recebida:", data);
 
-        const descricaoOriginal = data;
+        const payload = data?.dados || data || {};
+        const especie = payload.especie;
+        const familia = payload.familia;
+        const condicao = payload.condicao_saude;
+        const isPlanta = payload.isplant;
 
-        if (descricaoOriginal) {
-           const respostaHTML = `
-    <div style="margin-bottom: 5px;">
-      <span style="font-weight: bold; color: #388e3c;">📝 Descrição:</span><br>
-      <span style="display: inline-block; margin-top: 4px;">${descricaoOriginal}</span>
-    </div>`
+
+        if (isPlanta === false) {
+          appendMessage("🚫 Isso não parece ser uma planta ou árvore. Tente outra imagem!", "received");
+        } else if (especie && familia && condicao) {
+          const respostaHTML = `
+            <div style="margin-bottom: 8px;">
+              <span style="font-weight:  bold; color: #388e3c; text-align: center;">🌿 Espécie:</span><br>
+              <span style="display: inline-block; margin-top: 4px;">${especie}</span>
+            </div>
+            <div style="margin-bottom: 8px;">
+              <span style="font-weight: bold; color: #00695c; text-align: center;">🌳 Família:</span><br>
+              <span style="display: inline-block; margin-top: 4px;">${familia}</span>
+            </div>
+            <div>
+              <span style="font-weight: bold; color: #1e88e5; text-align: center;">❤️ Saúde:</span><br>
+              <span style="display: inline-block; margin-top: 4px;">${condicao}</span>
+            </div>
+          `;
           appendMessage(respostaHTML, "received", false, true);
-          
         } else {
-          appendMessage("⚠️ Resposta incompleta recebida.", "received");
+          appendMessage("⚠️ Resposta incompleta recebida do Gemini.", "received");
         }
+          
+        
       } else {
         const text = await res.text();
         appendMessage("📩 Resposta inesperada:\n" + text, "received");
@@ -223,6 +241,7 @@ document.getElementById("imageInput").addEventListener("change", function () {
   reader.readAsDataURL(file);
   this.value = "";
 });
+
 
    
     window.onload = () => {
@@ -257,16 +276,21 @@ document.getElementById("imageInput").addEventListener("change", function () {
       break;
 
     case "scan":
-  message = "Quero escanear uma planta!";
-  document.getElementById("imageInput").click(); 
+  message = "Quero escanear uma planta ou árvore!";
+  setTimeout(() => {
+    document.getElementById("imageInput").click(); 
+  }, 2000);
+  
+  
   break;
   }
 
   appendMessage(message, "sent");
+  appendMessage("Certo! me farei o possível para te ajudar a identificar a planta ou árvore!", "received");
 
   
 }
-
+  
   </script>
 </body>
 </html>

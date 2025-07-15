@@ -4,7 +4,6 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from .database import SessionLocal
-from transformers import BlipProcessor, BlipForConditionalGeneration, pipeline
 from PIL import Image
 import google.generativeai as genai
 import io
@@ -12,17 +11,13 @@ from .models import User
 from . import models, database
 from passlib.hash import bcrypt
 import re
-from deep_translator import GoogleTranslator
+import json, re
+
 
 
 router = APIRouter()
 genai.configure(api_key="AIzaSyCUbLzOUvdYZpvwGuZcZSMZ9TIugQ18wEk")
 templates = Jinja2Templates(directory="app/templates")
-
-# AI
-
-processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
 
 
 
@@ -208,27 +203,52 @@ def delete_account(request: Request, db: Session = Depends(get_db)):
 
     return RedirectResponse(url="/login", status_code=302)
 
-# Resposta da Inteligência artificial
+#Scan das imagens
 
 @router.post("/analyze")
 async def analyze_with_gemini(file: UploadFile = File(...)):
-    # Lê a imagem enviada
+    
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
-    # Cria o modelo Gemini
     model = genai.GenerativeModel("gemini-2.5-flash")
-
-    # Gera resposta com base na imagem
     response = model.generate_content(
-        [image, "Analise a espécie e família da planta ou árvore presente na imagem.Em seguida, forneça um parecer sobre a condição de saúde da planta.Retorne tudo no seguinte formato JSON, sem explicações adicionais:"
-         ], stream=False
-    )
-
-    # Obtém o texto da resposta
-    description = response.text
-
-    return JSONResponse(content=(description))
+    [
+        image,
+        """Analise a espécie e família da planta ou árvore presente na imagem.
+        Em seguida, forneça um parecer detalhado sobre a condição de saúde da planta, espécie e família.
+        Retorne tudo em português no seguinte formato JSON:
+        Se a imagem fornecida não for uma planta ou árvore, retorne isplant = false
+        {
+          "especie": "<Aqui irá a espécie da planta, e em seguida tente trazer o nome brasileiro dela ao lado.>",
+          "familia": "<Aqui irá a família que a planta pertence, pode dar detalhes sobre e até mesmo dar alguns exemplos breves de outras plantas ou arvores da familia>",
+          "condicao_saude": <aqui irá a saúde da planta>,
+          "isplant": <true ou false>
+        }
+        
+        """
+    ],
+    stream=False
+)
+    text_response = response.text
+    match = re.search(r"\{[\s\S]*\}", text_response)
+    if match:
+        try:
+            data_json = json.loads(match.group())
+        except json.JSONDecodeError:
+            data_json = {
+            "especie": None,
+            "familia": None,
+            "condicao_saude": None,
+            "isplant": False
+        }
+    else:
+        data_json = {
+        "especie": None,
+        "familia": None,
+        "condicao_saude": None,
+        "isplant": False
+    }
+    return JSONResponse(content={"dados": data_json})
 
 
 
