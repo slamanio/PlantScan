@@ -16,7 +16,7 @@ import json, re
 
 
 router = APIRouter()
-genai.configure(api_key="AIzaSyCUbLzOUvdYZpvwGuZcZSMZ9TIugQ18wEk")
+genai.configure(api_key="")
 templates = Jinja2Templates(directory="app/templates")
 
 
