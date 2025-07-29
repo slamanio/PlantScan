@@ -7,7 +7,8 @@ from .database import SessionLocal
 from PIL import Image
 import google.generativeai as genai
 import io
-from .models import User
+import shutil, os
+from .models import User, Plant
 from . import models, database
 from passlib.hash import bcrypt
 import re
@@ -19,6 +20,9 @@ router = APIRouter()
 genai.configure(api_key="")
 templates = Jinja2Templates(directory="app/templates")
 
+
+UPLOAD_DIR = "/app/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 
@@ -107,11 +111,12 @@ def login_user(
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == email).first()
-
+    plants = db.query(Plant).filter(Plant.user_id == user.id).all() if user else []
     if user and bcrypt.verify(password, user.password):
         request.session["user_id"] = user.id
         request.session["user_name"] = user.full_name
         request.session["user_email"] = user.email
+        request.session["plants"] = [plant.name for plant in plants]
         return RedirectResponse(url="/homepage", status_code=302)
     
     return templates.TemplateResponse("login.html", {
@@ -124,14 +129,26 @@ def login_user(
 
 
 @router.get("/homepage", response_class=HTMLResponse, name="home")
-def homepage(request: Request):
+def homepage(request: Request, db: Session = Depends(get_db)):
+    user_id = request.session.get("user_id")
     user_name = request.session.get("user_name")
+
+    top_plants = db.query(models.Plant)\
+    .order_by(models.Plant.count.desc())\
+    .limit(3)\
+    .all()
+
+    plants = db.query(models.Plant).filter(models.Plant.user_id == user_id).all() if user_id else []
+    plantsall = db.query(models.Plant).all()
     if user_name:
         return templates.TemplateResponse("homepage.html", {
             "request": request,
-            "user_name": user_name
-
+            "user_name": user_name,
+            "plants": plants,
+            "plantsall": plantsall,
+            "top_plants": top_plants
         })
+    
     return RedirectResponse(url="/login", status_code=302)
 
 @router.get("/logout", name="logout")
@@ -151,6 +168,27 @@ def update(request: Request):
     })
 
 # área de atualização de cadastro
+@router.post("/planta-info")
+async def planta_info(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    nome = form.get("nome")
+
+    planta = db.query(Plant).filter(Plant.name == nome).first()
+
+    if planta:
+        return JSONResponse(content={
+            "especie": planta.name,
+            "familia": planta.species,
+            "descricao": planta.description,
+            "image": planta.image_path
+        })
+    else:
+        return JSONResponse(content={
+            "especie": "Desconhecida",
+            "familia": "Desconhecida",
+            "descricao": "Não encontramos dados para essa planta."
+        })
+
 
 @router.post("/update", name="update_user")
 def update_user(
@@ -219,7 +257,7 @@ async def analyze_with_gemini(file: UploadFile = File(...)):
         Retorne tudo em português no seguinte formato JSON:
         Se a imagem fornecida não for uma planta ou árvore, retorne isplant = false
         {
-          "especie": "<Aqui irá a espécie da planta, e em seguida tente trazer o nome brasileiro dela ao lado.>",
+          "especie": "<Aqui irá a o nome da planta, TENTE COLOCAR O NOME MAIS SIMPLES POSSÍVEL, CONTENDO APENAS 1 PALAVRA SE POSSÍVEL.>",
           "familia": "<Aqui irá a família que a planta pertence, pode dar detalhes sobre e até mesmo dar alguns exemplos breves de outras plantas ou arvores da familia>",
           "condicao_saude": <aqui irá a saúde da planta>,
           "isplant": <true ou false>
@@ -251,7 +289,45 @@ async def analyze_with_gemini(file: UploadFile = File(...)):
     return JSONResponse(content={"dados": data_json})
 
 
+@router.post("/rplant", name="rplant")
+async def register_plant(request: Request, 
+    nome: str = Form(...),
+    especie: str = Form(...),
+    descricao: str = Form(...),
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    caminho_imagem = os.path.join(UPLOAD_DIR, image.filename)
+    with open(caminho_imagem, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
 
+    user_id = request.session.get("user_id")
+    if not user_id:
+     return RedirectResponse(url="/login", status_code=302)
 
+    existing_plant = db.query(models.Plant).filter(
+        models.Plant.name == nome,
+        models.Plant.user_id == user_id
+    ).first()
 
+    if existing_plant:
+        existing_plant.count += 1
+        db.commit()
+        db.refresh(existing_plant)
+        return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
 
+    # 🔥 Se não existe, cria uma nova
+    new_plant = models.Plant(
+        name=nome,
+        species=especie,
+        description=descricao,
+        user_id=user_id,
+        image_path=caminho_imagem,
+        count=1
+    )
+
+    db.add(new_plant)
+    db.commit()
+    db.refresh(new_plant)
+
+    return {"message": "Planta registrada com sucesso!", "plant_id": new_plant.id}

@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="shortcut icon" href="/static/assets/imgs/chip.png">
+ 
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="shortcut icon" href="/static/assets/imgs/chip.png">
   <title>PlantScan</title>
   <style>
     * {
@@ -17,46 +19,70 @@
       background: #f1f1f1;
       height: 100vh;
       display: flex;
+      overflow: hidden;
       justify-content: center;
       align-items: center;
     }
+    .menu {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-color: #2d492d;
+  color: white;
+  z-index: 1000;
+  padding: 10px 0;
+}
+.main-container{
+  display: flex;
+  justify-content: space-between;
+  
+}
+.chat-container {
+  width: 100%;
+  flex: 2;
+  margin-right: 200px;
+  max-width: 700px;
+  height: 90vh;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
 
-    .chat-container {
-      width: 90%;
-      max-width: 700px;
-      height: 90vh;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-    .chat-header {
-      padding: 15px 20px;
-      background: #4CAF50;
-      color: white;
-      font-weight: bold;
-      font-size: 1.2em;
+.chat-header {
+  background-color: #4CAF50; /* verde */
+  padding: 20px;
+  position: relative; /* necessário para posicionamento absoluto interno */
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  font-weight: bold;
+  font-size: 1.2em;
+
     }
 
     .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      background: #fafafa;
-    }
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fafafa;
+  border-radius: 0 0 15px 15px;
+}
 
     .message {
-      max-width: 75%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 2px solid;
-      word-wrap: break-word;
+       display: inline-block;
+  padding: 12px 16px;
+  background-color: #e0f7fa;
+  border-radius: 12px;
+  margin: 8px 0;
+  max-width: 60%; /* 👈 Limita a largura lateral */
+  word-wrap: break-word; /* quebra palavras longas */
     }
 
     .sent {
@@ -123,34 +149,257 @@
     #imageInput {
       display: none;
     }
+    
 
-    @media (max-width: 600px) {
-      .chat-container {
-        height: 100vh;
-        width: 100%;
-        border-radius: 0;
-      }
+    @media (max-width: 1000px) {
+  .main-container {
+    height: 75vh;
+  }
+  .chat-container {
+    margin-right: 0;
+    width: 100%;
+    height: 100vh;
+    max-width: 100%;
+    overflow: hidden;
+  }
     }
+  table {
+        width: 300px;
+        margin: 20px auto;
+        border-collapse: collapse;
+        font-family: Arial, sans-serif;
+    }
+    caption {
+        text-align: left;
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+    tr {
+        border-bottom: 1px solid #ddd;
+    }
+    td {
+        padding: 10px;
+    }
+    tr:hover {
+        background: #f5f5f5;
+        cursor: pointer;
+    }
+    .history-container {
+  position: fixed;
+  top: 80px;
+  width: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #f9f9f9;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.07);
+  z-index: 900;
+}
+
+/* ➤ Esquerda */
+.left-history {
+  left: 40px;
+}
+
+/* ➤ Direita */
+.right-history {
+  right: 40px;
+}
+
+  .history-container h3,
+  .history-container h4 {
+    color: #2f855a;
+    border-left: 4px solid #48bb78;
+    padding-left: 12px;
+    margin-top: 24px;
+    font-weight: 600;
+  }
+
+  .history-container ul {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 12px;
+  }
+
+  .history-container li {
+    background: #ffffff;
+    cursor: pointer;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s;
+  }
+
+  .history-container li:hover {
+    background-color: #e6f9ed;
+  }
+
+  .history-container strong {
+    color: #2d3748;
+    font-size: 16px;
+  }
+
+  .plant-icon {
+    font-size: 18px;
+    color: #48bb78;
+  }
+
+  .count-badge {
+    background: #e6fffa;
+    color: #319795;
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 8px;
+    margin-left: auto;
+  }
+  @media (max-width: 600px) {
+  .history-container {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .history-container li {
+    font-size: 14px;
+    padding: 10px;
+  }
+  /* ➤ Esquerda */
+.left-history {
+  left: 40px;
+}
+
+/* ➤ Direita */
+.right-history {
+  right: 40px;
+}
+}
+.floating-btn {
+  position: absolute;
+  right: 20px;
+  bottom: 5px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  padding: 15px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.floating-btn:hover {
+  background: #45a049;
+  transform: scale(1.05);
+} 
+.floating-btn-out {
+  position: absolute;
+  right: 30px;
+  bottom: 610px;
+  border: none;
+  border-radius: 30%;
+  padding: 10px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.floating-btn-out:hover {
+  background: #45a049;
+  transform: scale(1.05);
+} 
+@media (max-width: 1000px) {
+  .floating-btn {
+    display: block;
+  }
+  .history-container {
+    position: fixed;
+    top: 0;
+    right: -100%; /* escondido fora da tela */
+    width: 80%;
+    height: 100%;
+    max-height: 100%;
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 0;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .history-container.open {
+    right: 0; /* aparece */
+  }
+
+
+  .main-container {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+.layout-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+ 
+  overflow: hidden;
+  padding: 70px;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">PlantScan 🍃 </div>
-
-    <div class="chat-messages" id="chatMessages"></div>
-
-    <div class="input-area">
-      <button class="action-btn" onclick="handleAction('update')">👤 Perfil</button>
-  <button class="action-btn" onclick="handleAction('logout')">🚪 Sair</button>
-  <button class="action-btn" onclick="handleAction('scan')">📷 Escanear</button>
   
-</div>
 
+  <div class="main-container">
+   
+     <div class="chat-container">
+      <div class="chat-header">PlantScan 🍃 <button id="toggleHistory" class="floating-btn">≡</button></div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="input-area">
+        <button class="action-btn" onclick="handleAction('update')">👤 Perfil</button>
+        <button class="action-btn" onclick="handleAction('logout')">🚪 Sair</button>
+        <button class="action-btn" onclick="handleAction('scan')">📷 Escanear</button>
+      </div>
       <input type="file" id="imageInput" accept="image/*" />
     </div>
+    
+
+<div class="history-container right-history">
+      
+  <br>
+      <h3>📜 Histórico de Plantas</h3>
+      <ul>
+        {% for p in plants %}
+          <li onclick="handlePlantClick('{{ p.name }}')">
+            <span class="plant-icon">🌱</span>
+            <strong>{{ p.name }}</strong>
+            {%endfor %}
+        </ul>
+        <br>
+      <h4>🏆 Top 3 Plantas</h4>
+      <button id="toggleHistoryClose" class="floating-btn-out">≡</button>
+      <ul>
+        {% for tp in top_plants %}
+          <li onclick="handlePlantClick('{{ tp.name }}')"><span class="plant-icon">🔥</span><strong>{{ tp.name }}</strong>
+            <span class="count-badge">{{ tp.count }}x</span>
+          </li>
+        {% endfor %}
+      </ul>
+      
+    </div>
   </div>
+  
+</body>
+
+  
+
 
   <script>
+
     function appendMessage(content, type = 'sent', isImage = false, isHTML = false) {
   const messageElement = document.createElement("div");
   messageElement.className = "message " + type;
@@ -166,7 +415,6 @@
   }
 
   document.getElementById("chatMessages").appendChild(messageElement);
-
   const chatBox = document.getElementById("chatMessages");
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -223,6 +471,7 @@ document.getElementById("imageInput").addEventListener("change", function () {
               <span style="display: inline-block; margin-top: 4px;">${condicao}</span>
             </div>
           `;
+          registerPlant(especie, familia, condicao, file);
           appendMessage(respostaHTML, "received", false, true);
         } else {
           appendMessage("⚠️ Resposta incompleta recebida do Gemini.", "received");
@@ -249,6 +498,24 @@ document.getElementById("imageInput").addEventListener("change", function () {
         appendMessage("Oi {{user_name}}! Eu sou o Plenty! Precisa de ajuda com algo?", "received");
       }, 500);
     };
+
+ async function registerPlant(nome, especie, descricao, img) {
+    const formData = new FormData();
+    formData.append("nome", nome);
+    formData.append("especie", especie);
+    formData.append("descricao", descricao);
+    formData.append("image", img);
+
+    const response = await fetch("/rplant", {
+        method: "POST",
+        body: formData,
+    });
+
+    const result = await response.json();
+    console.log(result);
+}
+
+
 
     function handleAction(action) {
   let message = "";
@@ -290,7 +557,56 @@ document.getElementById("imageInput").addEventListener("change", function () {
 
   
 }
-  
+
+  document.getElementById("toggleHistoryClose").addEventListener("click", () => {
+  document.querySelector(".history-container").classList.toggle("open");
+});
+  document.getElementById("toggleHistory").addEventListener("click", () => {
+  document.querySelector(".history-container").classList.toggle("open");
+});
+
+
+  function handlePlantClick(plantName) {
+    appendMessage(`Quero saber mais sobre a planta: ${plantName}`, "sent");
+
+    const formData = new FormData();
+    formData.append("nome", plantName);
+
+    fetch("/planta-info", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) throw new Error("Erro ao buscar planta");
+      return response.json();
+    })
+    .then(data => {
+      const { especie, familia, descricao, image } = data;
+
+      const respostaHTML = `
+            <div style="margin-bottom: 8px;">
+              <span style="font-weight:  bold; color: #388e3c; text-align: center;">🌿 Espécie:</span><br>
+              <span style="display: inline-block; margin-top: 4px;">${especie}</span>
+            </div>
+            <div style="margin-bottom: 8px;">
+              <span style="font-weight: bold; color: #00695c; text-align: center;">🌳 Família:</span><br>
+              <span style="display: inline-block; margin-top: 4px;">${familia}</span>
+            </div>
+            <div>
+              <span style="font-weight: bold; color: #1e88e5; text-align: center;">❤️ Saúde:</span><br>
+              <span style="display: inline-block; margin-top: 4px;">${descricao}</span>
+            </div>
+            <div>
+              <span style="font-weight: bold; color: #1e88e5; text-align: center;">📷 Imagem:</span><br>
+              <span style="display: inline-block; margin-top: 4px;"><img src="${image}">${image}</img></span>
+            </div>
+          `;
+      appendMessage(respostaHTML, "received", false, true);
+    })
+    .catch(error => {
+      appendMessage(`❌ Erro ao buscar dados da planta: ${error.message}`, "received");
+    });
+  }
   </script>
 </body>
 </html>
