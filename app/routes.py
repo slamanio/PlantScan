@@ -8,12 +8,14 @@ from PIL import Image
 import google.generativeai as genai
 import io
 import shutil, os
-from .models import User, Plant
+from .models import User, Plant, PlantImage
 from . import models, database
 from passlib.hash import bcrypt
 import re
 import json, re
+from datetime import datetime
 
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 router = APIRouter()
@@ -21,8 +23,6 @@ genai.configure(api_key="")
 templates = Jinja2Templates(directory="app/templates")
 
 
-UPLOAD_DIR = "/app/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 
@@ -174,19 +174,21 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
     nome = form.get("nome")
 
     planta = db.query(Plant).filter(Plant.name == nome).first()
-
+    
     if planta:
+        image_url = f"/uploads/{planta.image_path}"
         return JSONResponse(content={
             "especie": planta.name,
             "familia": planta.species,
             "descricao": planta.description,
-            "image": planta.image_path
+            "image": image_url
         })
     else:
         return JSONResponse(content={
             "especie": "Desconhecida",
             "familia": "Desconhecida",
-            "descricao": "Não encontramos dados para essa planta."
+            "descricao": "Não encontramos dados para essa planta.",
+            "image": None
         })
 
 
@@ -294,11 +296,12 @@ async def register_plant(request: Request,
     nome: str = Form(...),
     especie: str = Form(...),
     descricao: str = Form(...),
-    image: UploadFile = File(...),
+    image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    caminho_imagem = os.path.join(UPLOAD_DIR, image.filename)
-    with open(caminho_imagem, "wb") as buffer:
+    filename = f"imagem_{timestamp}.png"
+    file_path = os.path.join("app/uploads", filename)
+    with open(file_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
 
     user_id = request.session.get("user_id")
@@ -316,18 +319,24 @@ async def register_plant(request: Request,
         db.refresh(existing_plant)
         return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
 
-    # 🔥 Se não existe, cria uma nova
+    
     new_plant = models.Plant(
         name=nome,
         species=especie,
         description=descricao,
         user_id=user_id,
-        image_path=caminho_imagem,
         count=1
+    )
+    new_image = models.PlantImage(
+        image_path=filename,
+        plant_id=new_plant.id
     )
 
     db.add(new_plant)
     db.commit()
     db.refresh(new_plant)
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
 
     return {"message": "Planta registrada com sucesso!", "plant_id": new_plant.id}

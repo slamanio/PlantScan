@@ -584,23 +584,23 @@ document.getElementById("imageInput").addEventListener("change", function () {
       const { especie, familia, descricao, image } = data;
 
       const respostaHTML = `
-            <div style="margin-bottom: 8px;">
-              <span style="font-weight:  bold; color: #388e3c; text-align: center;">🌿 Espécie:</span><br>
-              <span style="display: inline-block; margin-top: 4px;">${especie}</span>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <span style="font-weight: bold; color: #00695c; text-align: center;">🌳 Família:</span><br>
-              <span style="display: inline-block; margin-top: 4px;">${familia}</span>
-            </div>
-            <div>
-              <span style="font-weight: bold; color: #1e88e5; text-align: center;">❤️ Saúde:</span><br>
-              <span style="display: inline-block; margin-top: 4px;">${descricao}</span>
-            </div>
-            <div>
-              <span style="font-weight: bold; color: #1e88e5; text-align: center;">📷 Imagem:</span><br>
-              <span style="display: inline-block; margin-top: 4px;"><img src="${image}">${image}</img></span>
-            </div>
-          `;
+  <div style="margin-bottom: 8px;">
+    <span style="font-weight: bold; color: #388e3c; text-align: center;">🌿 Espécie:</span><br>
+    <span style="display: inline-block; margin-top: 4px;">${especie}</span>
+  </div>
+  <div style="margin-bottom: 8px;">
+    <span style="font-weight: bold; color: #00695c; text-align: center;">🌳 Família:</span><br>
+    <span style="display: inline-block; margin-top: 4px;">${familia}</span>
+  </div>
+  <div style="margin-bottom: 8px;">
+    <span style="font-weight: bold; color: #1e88e5; text-align: center;">❤️ Saúde:</span><br>
+    <span style="display: inline-block; margin-top: 4px;">${descricao}</span>
+  </div>
+  <div style="margin-bottom: 8px; text-align:center;">
+    <span style="font-weight: bold; color: #1e88e5;">📷 Imagem:</span><br>
+    <img src="${image}" alt="Imagem da planta" style="max-width:200px; border-radius:8px; margin-top:6px;">
+  </div>
+`;
       appendMessage(respostaHTML, "received", false, true);
     })
     .catch(error => {

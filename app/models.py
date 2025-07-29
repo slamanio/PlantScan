@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.sqlite import JSON
 from .database import Base
 
 
@@ -21,9 +22,17 @@ class Plant(Base):
     species = Column(String(1500), nullable=False)
     description = Column(String(1500), nullable=True)
     count = Column(Integer, default=0)
-    image_path = Column(String(255), nullable=True)
+    images = relationship("PlantImage", back_populates="plant", cascade="all, delete")
 
     
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     owner = relationship("User", back_populates="plants")
+
+class PlantImage(Base):
+    __tablename__ = 'plant_images'
+    id = Column(Integer, primary_key=True, index=True)
+    image_path = Column(String(255), nullable=False)
+    plant_id = Column(Integer, ForeignKey('plants.id'))
+
+    plant = relationship("Plant", back_populates="images")
