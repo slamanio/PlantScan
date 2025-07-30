@@ -582,6 +582,8 @@ document.getElementById("imageInput").addEventListener("change", function () {
     })
     .then(data => {
       const { especie, familia, descricao, image } = data;
+      const imagens = image; 
+      let currentIndex = 0;
 
       const respostaHTML = `
   <div style="margin-bottom: 8px;">
@@ -596,17 +598,35 @@ document.getElementById("imageInput").addEventListener("change", function () {
     <span style="font-weight: bold; color: #1e88e5; text-align: center;">❤️ Saúde:</span><br>
     <span style="display: inline-block; margin-top: 4px;">${descricao}</span>
   </div>
-  <div style="margin-bottom: 8px; text-align:center;">
-    <span style="font-weight: bold; color: #1e88e5;">📷 Imagem:</span><br>
-    <img src="${image}" alt="Imagem da planta" style="max-width:200px; border-radius:8px; margin-top:6px;">
+   <div style="margin-bottom: 8px; text-align:center;">
+    <span style="font-weight: bold; color: #1e88e5;">📷 Imagens:</span><br>
+    <div id="carousel" style="position: relative; width: 220px; margin: auto;">
+      <img id="carousel-image" src="${imagens[0]}" 
+           alt="Imagem da planta" 
+           style="max-width:200px; border-radius:8px; margin-top:6px; transition: opacity 0.3s;">
+      <button id="prev" style="position:absolute; left:0; top:50%; transform:translateY(-50%);">⬅️</button>
+      <button id="next" style="position:absolute; right:0; top:50%; transform:translateY(-50%);">➡️</button>
+    </div>
   </div>
 `;
+setTimeout(() => {
+  const imgElement = document.getElementById("carousel-image");
+  document.getElementById("prev").addEventListener("click", () => {
+    currentIndex = (currentIndex - 1 + imagens.length) % imagens.length;
+    imgElement.src = imagens[currentIndex];
+  });
+  document.getElementById("next").addEventListener("click", () => {
+    currentIndex = (currentIndex + 1) % imagens.length;
+    imgElement.src = imagens[currentIndex];
+  });
+}, 50);
       appendMessage(respostaHTML, "received", false, true);
     })
     .catch(error => {
       appendMessage(`❌ Erro ao buscar dados da planta: ${error.message}`, "received");
     });
   }
+  
   </script>
 </body>
 </html>

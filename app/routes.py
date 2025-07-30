@@ -8,6 +8,7 @@ from PIL import Image
 import google.generativeai as genai
 import io
 import shutil, os
+import hashlib
 from .models import User, Plant, PlantImage
 from . import models, database
 from passlib.hash import bcrypt
@@ -172,16 +173,16 @@ def update(request: Request):
 async def planta_info(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     nome = form.get("nome")
-
     planta = db.query(Plant).filter(Plant.name == nome).first()
     
     if planta:
-        image_url = f"/uploads/{planta.image_path}"
+        plantimage = db.query(models.PlantImage).filter(models.PlantImage.plant_id == planta.id).all()
+        image_urls = [f"/uploads/{img.image_path}" for img in plantimage]
         return JSONResponse(content={
             "especie": planta.name,
             "familia": planta.species,
             "descricao": planta.description,
-            "image": image_url
+            "image": image_urls
         })
     else:
         return JSONResponse(content={
@@ -299,44 +300,77 @@ async def register_plant(request: Request,
     image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    filename = f"imagem_{timestamp}.png"
-    file_path = os.path.join("app/uploads", filename)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
+    file_hash = None
+    filename = None
+
+    if image:
+        file_bytes = await image.read()
+        file_hash = hashlib.sha256(file_bytes).hexdigest()
+        await image.seek(0) 
 
     user_id = request.session.get("user_id")
-    if not user_id:
-     return RedirectResponse(url="/login", status_code=302)
 
     existing_plant = db.query(models.Plant).filter(
         models.Plant.name == nome,
-        models.Plant.user_id == user_id
+        models.Plant.user_id == user_id,
     ).first()
 
     if existing_plant:
         existing_plant.count += 1
         db.commit()
         db.refresh(existing_plant)
+    
+        if file_hash:
+            duplicate = db.query(models.PlantImage).filter(
+                models.PlantImage.plant_id == existing_plant.id,
+                models.PlantImage.image_hash == file_hash
+            ).first()
+
+            if not duplicate:
+                filename = f"imagem_{existing_plant.id}_{file_hash[:8]}.png"
+                file_path = os.path.join("app/uploads", filename)
+                with open(file_path, "wb") as buffer:
+                    buffer.write(file_bytes)
+
+                new_image = models.PlantImage(
+                    image_path=filename,
+                    image_hash=file_hash,
+                    plant_id=existing_plant.id
+                )
+                db.add(new_image)
+                db.commit()
+
+            return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
+
         return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
 
     
     new_plant = models.Plant(
+        id= None,  
         name=nome,
         species=especie,
         description=descricao,
         user_id=user_id,
         count=1
     )
-    new_image = models.PlantImage(
-        image_path=filename,
-        plant_id=new_plant.id
-    )
 
     db.add(new_plant)
     db.commit()
     db.refresh(new_plant)
-    db.add(new_image)
-    db.commit()
-    db.refresh(new_image)
+
+    if file_hash:
+        filename = f"imagem_{new_plant.id}_{file_hash[:8]}.png"
+        file_path = os.path.join("app/uploads", filename)
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_bytes)
+
+        new_image = models.PlantImage(
+            image_path=filename,
+            image_hash=file_hash, 
+            plant_id=new_plant.id
+        )
+        db.add(new_image)
+        db.commit()
+
 
     return {"message": "Planta registrada com sucesso!", "plant_id": new_plant.id}

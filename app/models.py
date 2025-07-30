@@ -33,6 +33,7 @@ class PlantImage(Base):
     __tablename__ = 'plant_images'
     id = Column(Integer, primary_key=True, index=True)
     image_path = Column(String(255), nullable=False)
+    image_hash = Column(String(255), unique=True, nullable=False)
     plant_id = Column(Integer, ForeignKey('plants.id'))
 
     plant = relationship("Plant", back_populates="images")
