@@ -13,7 +13,7 @@ class User(Base):
     password = Column(String(255), nullable=False)
     profile_image = Column(String(255), nullable=True)
 
-    plants = relationship("Plant", back_populates="owner")
+    plants = relationship("Plant", back_populates="owner", cascade="all, delete")
 
 class Plant(Base):
     __tablename__ = 'plants'
@@ -23,7 +23,7 @@ class Plant(Base):
     species = Column(String(1500), nullable=False)
     description = Column(String(1500), nullable=True)
     count = Column(Integer, default=0)
-    images = relationship("PlantImage", back_populates="plant", cascade="all, delete")
+    images = relationship("PlantImage", back_populates="plant", cascade="all, delete-orphan")
 
     
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -35,6 +35,6 @@ class PlantImage(Base):
     id = Column(Integer, primary_key=True, index=True)
     image_path = Column(String(255), nullable=False)
     image_hash = Column(String(255), unique=True, nullable=False)
-    plant_id = Column(Integer, ForeignKey('plants.id'))
+    plant_id = Column(Integer, ForeignKey("plants.id", ondelete="CASCADE"))
 
     plant = relationship("Plant", back_populates="images")

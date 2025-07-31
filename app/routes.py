@@ -105,16 +105,18 @@ async def register_user(request: Request,
     
     if profile_image:
         file_bytes = await profile_image.read()
-        file_hash = hashlib.sha256(file_bytes).hexdigest()
-        filename = f"imagem_{user.id}_{file_hash[:8]}.png"
-        filepath = os.path.join("app","profpic", filename)
+        if file_bytes:
+            file_hash = hashlib.sha256(file_bytes).hexdigest()
+            filename = f"imagem_{user.id}_{file_hash[:8]}.png"
+            filepath = os.path.join("app","profpic", filename)
 
         # Cria diretório se não existir
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-        with open(filepath, "wb") as f:
-            f.write(file_bytes)
-
+            with open(filepath, "wb") as f:
+                f.write(file_bytes)
+        else:
+            filename = f"default.png"
         # Atualiza usuário com o caminho da imagem
         user.profile_image = filename
         db.commit()
@@ -157,7 +159,8 @@ def login_user(
 def homepage(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
     user_name = request.session.get("user_name")
-    user_profile_image = db.query(User.profile_image).filter(User.full_name == user_name).first()
+    user_email = request.session.get("user_email")
+    user_profile_image = db.query(User.profile_image).filter(User.email == user_email).first()
     image_urls = f"/profpic/{user_profile_image[0]}"
     if image_urls is None:
         image_urls = f"/profpic/default.png"
@@ -264,40 +267,46 @@ async def update_user(
 
         if profile_image:
             file_bytes = await profile_image.read()
-            file_hash = hashlib.sha256(file_bytes).hexdigest()
-            filename = f"imagem_{user.id}_{file_hash[:8]}.png"
-            filepath = os.path.join("app", "profpic", filename)
+            if file_bytes:  
+                file_hash = hashlib.sha256(file_bytes).hexdigest()
+                filename = f"imagem_{user.id}_{file_hash[:8]}.png"
+                filepath = os.path.join("app", "profpic", filename)
+    
+                with open(filepath, "wb") as f:
+                    f.write(file_bytes)
 
-            with open(filepath, "wb") as f:
-                f.write(file_bytes)
-
-            user.profile_image = filename
-            request.session["user_profile_image"] = f"{filename}"
-
-        db.commit()
-
+                user.profile_image = filename
+                request.session["user_profile_image"] = filename
+                db.commit()
+        
+            if not file_bytes:
+                user.profile_image = "default.png"
+                request.session["user_profile_image"] = "default.png"
+                db.commit()
     return RedirectResponse("/homepage", status_code=302)
 
 # Exclusão de conta
 
-@router.post("/delete-account", name="delete_account")
+@router.post("/delete", name="delete")
 def delete_account(request: Request,
     senha: str = Form(""), 
     db: Session = Depends(get_db)):
+
     user_id = request.session.get("user_id")
-    user_pass = request.session.get("user_password")
-    
+
     if not user_id:
         return RedirectResponse(url="/login", status_code=302)
 
     user = db.query(User).filter(User.id == user_id).first()
-    if user and bcrypt.verify(senha, user_pass):
+    
+    if user and bcrypt.verify(senha, user.password):
+        # 🔹 Apaga as plantas relacionadas antes
+        db.query(Plant).filter(Plant.user_id == user_id).delete()
         db.delete(user)
         db.commit()
-        request.session.clear()  
+        request.session.clear()
 
     return RedirectResponse(url="/login", status_code=302)
-
 #Scan das imagens
 
 @router.post("/analyze")
