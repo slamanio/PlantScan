@@ -11,6 +11,7 @@ class User(Base):
     full_name = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
+    profile_image = Column(String(255), nullable=True)
 
     plants = relationship("Plant", back_populates="owner")
 

@@ -7,37 +7,166 @@
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="shortcut icon" href="/static/assets/imgs/chip.png">
     <title>PlantScan</title>
+    <style>
+.delete-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background-color: #e53935;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-weight: bold;
+}
+
+.delete-btn:hover {
+  background-color: #c62828;
+}
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+  margin-bottom: 15px;
+}
+
+.modal-content input {
+  padding: 10px;
+  width: 80%;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+}
+
+.modal-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.modal-actions button:first-child {
+  background-color: #e53935;
+  color: white;
+}
+
+.modal-actions button:last-child {
+  background-color: #ccc;
+  color: #333;
+}
+
+</style>
+
 </head>
 <body>    
     <div class="contreg">
-        <div class="board">
-            <button class="back-btn" onclick="window.location.href='{{ url_for('home') }}'">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="form-container">
-                <h2 class="form-title">Informações</h2>
-                {% if mensagem %}
-  <p style="color: red;">{{ mensagem | safe }}</p>
-{% endif %}
-                <form method="post" name="update">
-                <div class="input-group">
-                    <input type="text" id="full_name" name="full_name" placeholder=" " >
-                    <label for="name">{{ user_name }}</label>
+    <div class="board">
+        <button class="back-btn" onclick="window.location.href='{{ url_for('home') }}'">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+
+        <div class="form-container">
+            <h2 class="form-title">Informações</h2>
+
+            {% if mensagem %}
+            <p style="color: red;">{{ mensagem | safe }}</p>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" name="update">
+                <div style="text-align:center; margin-bottom:15px;">
+                    <img id="preview-pic" src="{{ user_profile_image }}"
+                         style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #388e3c;">
+                    <br>
+                    <label for="profile-pic" style="cursor:pointer;">
+                        <i class="fas fa-camera" style="font-size:32px; color:#388e3c;"></i>
+                    </label>
+                    <input type="file" id="profile-pic" name="profile_image" accept="image/*" style="display:none;">
                 </div>
+
                 <div class="input-group">
-                    <input type="email" id="email" placeholder=" " name="email" >
-                    <label for="email">{{ user_email}}</label>
+                    <input type="text" id="full_name" name="full_name" placeholder=" ">
+                    <label for="full_name">{{ user_name }}</label>
                 </div>
-                
+
+                <div class="input-group">
+                    <input type="email" id="email" name="email" placeholder=" ">
+                    <label for="email">{{ user_email }}</label>
+                </div>
+
                 <button type="submit" class="submit-btn">Atualizar</button>
-                </form>
-            </div>
-            <br>
+                <!-- Botão Deletar Conta -->
+
+
+            </form>
+            
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <form  method="post" name="delete-account">
+      <h3>Confirmar Exclusão</h3>
+      
+
+      <p>Digite sua senha para confirmar:</p>
+      <input type="password" id="senha" name="senha" required style="padding:8px; width: 250px; margin-top:8px; border-radius:5px; border: 1px solid #ccc;"/>
+      <br/>
+      <div class="modal-actions">
+        <button class="confirm-btn" onclick="confirmpass(event)">Confirmar</button>
+        </form>
+        <button type="button" onclick="closeDeleteModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+
+
+            <button type="button" class="delete-btn" onclick="openDeleteModal()">🗑️ Deletar Conta</button>
+
+<!-- Modal -->
 
         </div>
+        <br>
     </div>
+</div>
+
 
     <script>
+      
+        document.getElementById("profile-pic").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById("preview-pic").src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.toggle-password').forEach(icon => {
                 icon.addEventListener('click', function() {
@@ -54,6 +183,39 @@
                 });
             });
         });
+
+
+function openDeleteModal() {
+  document.getElementById('senha').value = '';
+  document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+function confirmpass(event) {
+  const senha = document.getElementById("senha").value.trim();
+
+  if (!senha) {
+    alert("Por favor, digite sua senha.");
+    event.preventDefault(); // impede o envio do form
+    return false;
+  }
+
+  // Se quiser confirmar com o usuário:
+  const confirmar = confirm("Tem certeza que deseja deletar sua conta?");
+  if (!confirmar) {
+    event.preventDefault(); // impede o envio do form
+    return false;
+  }
+
+  // Caso tudo ok, o form será enviado normalmente
+}
+
+
+
+
+
     </script>
 </body>
 </html>

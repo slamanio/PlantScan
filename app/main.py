@@ -18,5 +18,6 @@ genai.configure(api_key="AIzaSyDH3u4e0bA1hgtzT0oPWBcw4Bd7oB1LMcw")
 # Css, JS e afins
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/uploads", StaticFiles(directory="app/uploads"), name="uploads")
+app.mount("/profpic", StaticFiles(directory="app/profpic"), name="profpic")
 # Sessão
 app.add_middleware(SessionMiddleware, secret_key=print(secrets.token_hex(32)), max_age=60 * 60 * 24 * 7)

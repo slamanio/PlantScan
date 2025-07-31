@@ -12,6 +12,7 @@ import hashlib
 from .models import User, Plant, PlantImage
 from . import models, database
 from passlib.hash import bcrypt
+from passlib.context import CryptContext
 import re
 import json, re
 from datetime import datetime
@@ -22,7 +23,7 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 router = APIRouter()
 genai.configure(api_key="")
 templates = Jinja2Templates(directory="app/templates")
-
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 
@@ -33,6 +34,8 @@ def validar_senha(senha):
     padrao = r'^(?=.*[A-Za-z]).{8,}$'
     return bool(re.match(padrao, senha))
 
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 #Conexão com o banco.
 
 def get_db():
@@ -61,8 +64,12 @@ async def register_user(request: Request,
     email: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
+    profile_image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
+    
+    
+        
     if not validar_senha(password):
         return templates.TemplateResponse("register.html", {
             "request": request,
@@ -82,6 +89,7 @@ async def register_user(request: Request,
         })
     
     hashed_password = bcrypt.hash(password)
+    
     user = models.User(full_name=full_name, email=email, password=hashed_password)
 
     try:
@@ -95,6 +103,22 @@ async def register_user(request: Request,
             "mensagem": "Erro inesperado ao registrar. Tente novamente."
         })
     
+    if profile_image:
+        file_bytes = await profile_image.read()
+        file_hash = hashlib.sha256(file_bytes).hexdigest()
+        filename = f"imagem_{user.id}_{file_hash[:8]}.png"
+        filepath = os.path.join("app","profpic", filename)
+
+        # Cria diretório se não existir
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+        with open(filepath, "wb") as f:
+            f.write(file_bytes)
+
+        # Atualiza usuário com o caminho da imagem
+        user.profile_image = filename
+        db.commit()
+
     return RedirectResponse(url="/", status_code=302)
 
 
@@ -133,6 +157,10 @@ def login_user(
 def homepage(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
     user_name = request.session.get("user_name")
+    user_profile_image = db.query(User.profile_image).filter(User.full_name == user_name).first()
+    image_urls = f"/profpic/{user_profile_image[0]}"
+    if image_urls is None:
+        image_urls = f"/profpic/default.png"
 
     top_plants = db.query(models.Plant)\
     .order_by(models.Plant.count.desc())\
@@ -145,6 +173,7 @@ def homepage(request: Request, db: Session = Depends(get_db)):
         return templates.TemplateResponse("homepage.html", {
             "request": request,
             "user_name": user_name,
+            "profile_image": image_urls,
             "plants": plants,
             "plantsall": plantsall,
             "top_plants": top_plants
@@ -158,14 +187,19 @@ def logout(request: Request):
     return RedirectResponse(url="/login", status_code=302)
 
 @router.get("/update", name="update")
-def update(request: Request):
+def update(request: Request, db: Session = Depends(get_db)):
     user_name = request.session.get("user_name")
     user_email = request.session.get("user_email")
-
+    
+    user_profile_image = db.query(User.profile_image).filter(User.full_name == user_name).first()
+    image_urls = f"/profpic/{user_profile_image[0]}"
+    if image_urls is None:
+        image_urls = f"/profpic/default.png"
     return templates.TemplateResponse("update.html", {
         "request": request,
         "user_name": user_name,
-        "user_email": user_email
+        "user_email": user_email,
+        "user_profile_image": image_urls
     })
 
 # área de atualização de cadastro
@@ -194,14 +228,16 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/update", name="update_user")
-def update_user(
+async def update_user(
     request: Request,
     full_name: str = Form(""),
     email: str = Form(""),
+    profile_image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
     user_id = request.session.get("user_id")
     
+
     if not user_id:
         return RedirectResponse("/login", status_code=302)
 
@@ -209,18 +245,34 @@ def update_user(
     usuario_existente = db.query(User).filter_by(email=email).first()
     
     if user:
-        
+        if usuario_existente and usuario_existente.id != user.id:
+            return templates.TemplateResponse("update.html", {
+                "request": request,
+                "mensagem": "Este email já está cadastrado no sistema.",
+                "user_name": user.full_name,
+                "user_email": user.email,
+                "user_profile_image": user.profile_image,
+            })
+
         if full_name.strip():
             user.full_name = full_name
-            request.session["user_name"] = full_name  
-        if usuario_existente:
-            return templates.TemplateResponse("update.html", {
-            "request": request,
-            "mensagem": "Este email já está cadastrado no sistema."
-        })
+            request.session["user_name"] = full_name
+
         if email.strip():
             user.email = email
-            request.session["user_email"] = email  
+            request.session["user_email"] = email
+
+        if profile_image:
+            file_bytes = await profile_image.read()
+            file_hash = hashlib.sha256(file_bytes).hexdigest()
+            filename = f"imagem_{user.id}_{file_hash[:8]}.png"
+            filepath = os.path.join("app", "profpic", filename)
+
+            with open(filepath, "wb") as f:
+                f.write(file_bytes)
+
+            user.profile_image = filename
+            request.session["user_profile_image"] = f"{filename}"
 
         db.commit()
 
@@ -229,15 +281,17 @@ def update_user(
 # Exclusão de conta
 
 @router.post("/delete-account", name="delete_account")
-def delete_account(request: Request, db: Session = Depends(get_db)):
+def delete_account(request: Request,
+    senha: str = Form(""), 
+    db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
-
+    user_pass = request.session.get("user_password")
+    
     if not user_id:
         return RedirectResponse(url="/login", status_code=302)
 
     user = db.query(User).filter(User.id == user_id).first()
-
-    if user:
+    if user and bcrypt.verify(senha, user_pass):
         db.delete(user)
         db.commit()
         request.session.clear()  

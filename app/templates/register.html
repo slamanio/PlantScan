@@ -15,33 +15,50 @@
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="form-container">
-                <h2 class="form-title">Cadastro</h2>
-                {% if mensagem %}
-  <p style="color: red;">{{ mensagem | safe }}</p>
-{% endif %}
-                <form method="post" name="register_form">
-                <div class="input-group">
-                    <input type="text" id="full_name" name="full_name" placeholder=" " required>
-                    <label for="name">Nome completo</label>
-                </div>
-                <div class="input-group">
-                    <input type="email" id="email" placeholder=" " name="email" required>
-                    <label for="email">E-mail</label>
-                </div>
-                <div class="input-group">
-                    <input type="password" id="password" placeholder=" " name="password" required>
-                    <label for="senha">Senha</label>
-                    <i class="toggle-password fas fa-eye"></i>
-                </div>
-                <div class="input-group">
-                    <input type="password" id="confirm_password" placeholder=" " name="confirm_password" required>
-                    <label for="confirmar-senha">Confirmar senha</label>
-                    <i class="toggle-password fas fa-eye"></i>
-                </div>
-                
-                <button type="submit" class="submit-btn">Cadastrar</button>
-                </form>
-            </div>
+    <h2 class="form-title">Cadastro</h2>
+
+    {% if mensagem %}
+        <p style="color: red;">{{ mensagem | safe }}</p>
+    {% endif %}
+
+    <div style="text-align:center; margin-bottom:15px;">
+        <img id="preview-pic" src="/profpic/default.png" 
+             style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #388e3c;">
+        <br>
+    </div>
+
+    <!-- enctype é necessário para envio de arquivos -->
+    <form method="post" name="register_form" enctype="multipart/form-data">
+        <div class="input-group">
+            <input type="text" id="full_name" name="full_name" placeholder=" " required>
+            <label for="full_name">Nome completo</label>
+        </div>
+        <div class="input-group">
+            <input type="email" id="email" name="email" placeholder=" " required>
+            <label for="email">E-mail</label>
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" name="password" placeholder=" " required>
+            <label for="password">Senha</label>
+            <i class="toggle-password fas fa-eye"></i>
+        </div>
+        <div class="input-group">
+            <input type="password" id="confirm_password" name="confirm_password" placeholder=" " required>
+            <label for="confirm_password">Confirmar senha</label>
+            <i class="toggle-password fas fa-eye"></i>
+        </div>
+
+        <div style="text-align:center; margin-bottom:15px;">
+            <label for="profile-pic" style="cursor:pointer;">
+                <i class="fas fa-camera" style="font-size:32px; color:#388e3c;"></i>
+            </label>
+            <input type="file" id="profile-pic" name="profile_image" accept="image/*" style="display:none;">
+        </div>
+
+        <button type="submit" class="submit-btn">Cadastrar</button>
+    </form>
+</div>
+
             <br>
             <a href="{{url_for('login_form')}}">Já possui uma conta?</a>
 
@@ -49,7 +66,19 @@
     </div>
 
     <script>
-       
+        
+        // Preview da imagem selecionada
+document.getElementById("profile-pic").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById("preview-pic").src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.toggle-password').forEach(icon => {
                 icon.addEventListener('click', function() {

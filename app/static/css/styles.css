@@ -3,6 +3,24 @@
   margin:0;
   box-sizing:border-box;
 }
+.delete-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background-color: #e53935;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-weight: bold;
+}
+
+.delete-btn:hover {
+  background-color: #c62828;
+}
+
 
 
 @font-face {
@@ -14,6 +32,7 @@ body {
   overflow-x:hidden;
   background-image: url('/static/assets/imgs/prin.jpg');
 }
+
 .container {
   min-height:100vh;
   width:100%;
