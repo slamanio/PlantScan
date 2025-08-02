@@ -10,14 +10,15 @@
   <title>PlantScan</title>
   
 </head>
-<body>
- 
+<body class="{{ theme }}">
+ <button id="theme-toggle">🌙 Modo Escuro</button>
 </div>
   <div class="profile-menu-wrapper" id="profileWrapper">
   <img src="{{ profile_image }}" alt="Perfil" id="profilePic">
   <div class="dropdown-menu" id="dropdownMenu">
     <button onclick="handleAction('update')">👤 Perfil</button>
     <button onclick="handleAction('logout')">🚪 Sair</button>
+    
   </div>
 </div>
 
@@ -38,17 +39,17 @@
   <br>
       <h3>📜 Histórico de Plantas</h3>
       <ul>
-        {% for p in plants %}
-          <li onclick="handlePlantClick('{{ p.name }}')">
+        {% for p in userplants %}
+          <li class="history-table" onclick="handlePlantClick('{{ p.plant_name }}')">
             <span class="plant-icon">🌱</span>
-            <strong>{{ p.name }}</strong>
+            <strong>{{ p.plant_name}}</strong>
             {%endfor %}
         </ul>
         <br>
       <h4>🏆 Top 3 Plantas</h4>
       <ul>
         {% for tp in top_plants %}
-          <li onclick="handlePlantClick('{{ tp.name }}')"><span class="plant-icon">🔥</span><strong>{{ tp.name }}</strong>
+          <li class="history-table" onclick="handlePlantClick('{{ tp.name }}')"><span class="plant-icon">🔥</span><strong>{{ tp.name }}</strong>
             <span class="count-badge">{{ tp.count }}x</span>
           </li>
         {% endfor %}
@@ -64,7 +65,24 @@
 
   <script>
 
+ 
+   
+document.getElementById("theme-toggle").addEventListener("click", function() {
+    document.body.classList.toggle("dark");
+    
+    const currentTheme = document.body.classList.contains("dark") ? "dark" : "light";
 
+    // Envia para o backend
+    fetch("/update_theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: currentTheme })
+    });
+});
+
+
+
+ 
   const profilePic = document.getElementById("profilePic");
   const dropdownMenu = document.getElementById("dropdownMenu");
 
@@ -242,13 +260,15 @@ document.getElementById("imageInput").addEventListener("change", function () {
     document.getElementById("imageInput").click(); 
   }, 2000);
   
-  
-  break;
-  }
-
   appendMessage(message, "sent");
   appendMessage("Certo! me farei o possível para te ajudar a identificar a planta ou árvore!", "received");
 
+  break;
+  
+  
+  }
+
+  
   
 }
 

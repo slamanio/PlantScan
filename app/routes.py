@@ -9,7 +9,7 @@ import google.generativeai as genai
 import io
 import shutil, os
 import hashlib
-from .models import User, Plant, PlantImage
+from .models import User, Plant, PlantImage, userPlant
 from . import models, database
 from passlib.hash import bcrypt
 from passlib.context import CryptContext
@@ -90,7 +90,7 @@ async def register_user(request: Request,
     
     hashed_password = bcrypt.hash(password)
     
-    user = models.User(full_name=full_name, email=email, password=hashed_password)
+    user = models.User(full_name=full_name, email=email, password=hashed_password, theme="light")
 
     try:
         db.add(user)
@@ -138,12 +138,12 @@ def login_user(
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == email).first()
-    plants = db.query(Plant).filter(Plant.user_id == user.id).all() if user else []
+
     if user and bcrypt.verify(password, user.password):
         request.session["user_id"] = user.id
         request.session["user_name"] = user.full_name
         request.session["user_email"] = user.email
-        request.session["plants"] = [plant.name for plant in plants]
+ 
         return RedirectResponse(url="/homepage", status_code=302)
     
     return templates.TemplateResponse("login.html", {
@@ -160,7 +160,9 @@ def homepage(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
     user_name = request.session.get("user_name")
     user_email = request.session.get("user_email")
+    user_theme = request.session.get("user_theme")
     user_profile_image = db.query(User.profile_image).filter(User.email == user_email).first()
+    user_plants = db.query(userPlant.plant_name).filter(userPlant.user_id == user_id).all()
     image_urls = f"/profpic/{user_profile_image[0]}"
     if image_urls is None:
         image_urls = f"/profpic/default.png"
@@ -170,14 +172,14 @@ def homepage(request: Request, db: Session = Depends(get_db)):
     .limit(3)\
     .all()
 
-    plants = db.query(models.Plant).filter(models.Plant.user_id == user_id).all() if user_id else []
     plantsall = db.query(models.Plant).all()
     if user_name:
         return templates.TemplateResponse("homepage.html", {
             "request": request,
             "user_name": user_name,
             "profile_image": image_urls,
-            "plants": plants,
+            "theme": user_theme,
+            "userplants": user_plants,
             "plantsall": plantsall,
             "top_plants": top_plants
         })
@@ -204,6 +206,19 @@ def update(request: Request, db: Session = Depends(get_db)):
         "user_email": user_email,
         "user_profile_image": image_urls
     })
+
+@router.post("/update_theme")
+async def update_theme(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    theme = data.get("theme", "light")
+    user_id = request.session.get("user_id")
+    
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user:
+        user.theme = theme
+        db.commit()
+        return {"status": "success", "theme": theme}
+    return {"status": "error", "message": "user not found"}
 
 # área de atualização de cadastro
 @router.post("/planta-info")
@@ -293,15 +308,14 @@ def delete_account(request: Request,
     db: Session = Depends(get_db)):
 
     user_id = request.session.get("user_id")
-
+    
     if not user_id:
         return RedirectResponse(url="/login", status_code=302)
 
     user = db.query(User).filter(User.id == user_id).first()
     
     if user and bcrypt.verify(senha, user.password):
-        # 🔹 Apaga as plantas relacionadas antes
-        db.query(Plant).filter(Plant.user_id == user_id).delete()
+        db.query(userPlant).filter(userPlant.user_id == user_id).delete()
         db.delete(user)
         db.commit()
         request.session.clear()
@@ -323,7 +337,7 @@ async def analyze_with_gemini(file: UploadFile = File(...)):
         Retorne tudo em português no seguinte formato JSON:
         Se a imagem fornecida não for uma planta ou árvore, retorne isplant = false
         {
-          "especie": "<Aqui irá a o nome da planta, TENTE COLOCAR O NOME MAIS SIMPLES POSSÍVEL, CONTENDO APENAS 1 PALAVRA SE POSSÍVEL.>",
+          "especie": "<Aqui irá a o nome da planta, TENTE COLOCAR O NOME MAIS SIMPLES POSSÍVEL, SEMPRE NO SINGULAR E CONTENDO APENAS 1 PALAVRA SE POSSÍVEL.>",
           "familia": "<Aqui irá a família que a planta pertence, pode dar detalhes sobre e até mesmo dar alguns exemplos breves de outras plantas ou arvores da familia>",
           "condicao_saude": <aqui irá a saúde da planta>,
           "isplant": <true ou false>
@@ -375,14 +389,20 @@ async def register_plant(request: Request,
 
     existing_plant = db.query(models.Plant).filter(
         models.Plant.name == nome,
-        models.Plant.user_id == user_id,
     ).first()
 
     if existing_plant:
         existing_plant.count += 1
         db.commit()
         db.refresh(existing_plant)
-    
+        new_userplanty = models.userPlant(
+                    plant_name=existing_plant.name,
+                    plant_id=existing_plant.id,
+                    user_id=user_id
+                )
+        db.add(new_userplanty)
+        db.commit()
+        db.refresh(new_userplanty)
         if file_hash:
             duplicate = db.query(models.PlantImage).filter(
                 models.PlantImage.plant_id == existing_plant.id,
@@ -402,7 +422,7 @@ async def register_plant(request: Request,
                 )
                 db.add(new_image)
                 db.commit()
-
+                
             return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
 
         return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
@@ -413,13 +433,21 @@ async def register_plant(request: Request,
         name=nome,
         species=especie,
         description=descricao,
-        user_id=user_id,
         count=1
     )
 
     db.add(new_plant)
     db.commit()
     db.refresh(new_plant)
+
+    new_userplant = models.userPlant(
+        plant_name=new_plant.name,
+        plant_id=new_plant.id,
+        user_id=user_id
+    )
+    db.add(new_userplant)
+    db.commit()
+    db.refresh(new_userplant)
 
     if file_hash:
         filename = f"imagem_{new_plant.id}_{file_hash[:8]}.png"

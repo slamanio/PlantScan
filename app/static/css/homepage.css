@@ -3,6 +3,92 @@
       margin: 0;
       padding: 0;
     }
+#theme-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: background 0.3s ease, color 0.3s ease;
+  z-index: 1000;
+}
+
+#theme-toggle:hover {
+  background: #f0f0f0;
+}
+
+
+
+body.dark {
+  background: #1e1e1e;
+  color: #000000;
+}
+
+/* Caixas */
+body.dark .chat-container,
+body.dark .history-container{
+  background: #2b2b2b;
+}
+/* Estilo para os itens do histórico no modo escuro */
+body.dark .history-table {
+  background: #1e1e1e;
+  color: #fff !important;
+  border-radius: 6px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Garante que o texto dentro de <strong> fica branco */
+body.dark .history-table strong {
+  color: #fff !important;
+}
+
+/* Ícones e badges também */
+body.dark .history-table .plant-icon,
+body.dark .history-table .count-badge {
+  color: #000000 !important;
+}
+
+
+
+/* Ícones e outros textos também */
+body.dark .history-item .plant-icon,
+body.dark .history-item .count-badge {
+  color: #fff !important;
+}
+/* Cabeçalho */
+
+
+/* Botões */
+body.dark .action-btn {
+  background: #4caf50;
+  color: #000000;
+}
+
+
+body.dark .chat-messages {
+  background: #131e12;
+  color: #000000 !important;
+  border-top: 1px solid #444;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Área de input no modo escuro */
+body.dark .input-area {
+  background: #2b2b2b;
+  border-top: 1px solid #444;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Botão de ação no modo escuro */
+body.dark .input-area .action-btn {
+  background: #4caf50;
+  color: #fff !important;
+}
     .profile-menu-wrapper {
   position: fixed; /* Fixa na tela, independente do scroll */
   top: 15px;
