@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link  href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet"/>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/homepage.css">
     <link rel="shortcut icon" href="/static/assets/imgs/chip.png">
+    <link href="https://unpkg.com/cropperjs/dist/cropper.css" rel="stylesheet"/>
+    <script src="https://unpkg.com/cropperjs"></script>
     <title>PlantScan</title>
-    <style>
+   <style>
+/* Botão Deletar Conta */
 .delete-btn {
   margin-top: 20px;
   width: 100%;
@@ -18,70 +24,74 @@
   border-radius: 25px;
   font-size: 1em;
   cursor: pointer;
-  transition: background 0.3s ease;
   font-weight: bold;
+  transition: background 0.3s ease;
 }
+.delete-btn:hover { background-color: #c62828; }
 
-.delete-btn:hover {
-  background-color: #c62828;
-}
+/* Modal Genérico */
 .modal {
   display: none;
   position: fixed;
   z-index: 9999;
   left: 0; top: 0;
   width: 100%; height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.5);
   justify-content: center;
   align-items: center;
 }
-
 .modal-content {
-  background: white;
-  padding: 30px;
+  background: #fff;
+  padding: 20px;
   border-radius: 10px;
   width: 90%;
   max-width: 400px;
+  position: relative;
   text-align: center;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
-.modal-content h3 {
-  margin-bottom: 15px;
+/* Botão Fechar X */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+  transition: color 0.3s ease;
 }
-
-.modal-content input {
-  padding: 10px;
-  width: 80%;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 15px;
-}
-
-.modal-actions button {
-  padding: 10px 20px;
+.close:hover { color: #e53935; }
+/* Botão Editar Foto */
+#editPhoto {
+  background: #388e3c;
+  color: white;
   border: none;
   border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+#editPhoto:hover {
+  background: #2e7d32;
+  transform: scale(1.05);
+}
+#editPhoto:active {
+  transform: scale(0.98);
+}
+.btn-cancel {
+  background: #ccc;
+  color: #333;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
   cursor: pointer;
   font-weight: bold;
 }
 
-.modal-actions button:first-child {
-  background-color: #e53935;
-  color: white;
-}
 
-.modal-actions button:last-child {
-  background-color: #ccc;
-  color: #333;
-}
-/* Contêiner da foto de perfil */
+/* Foto de perfil */
 .profile-pic-wrapper {
   position: relative;
   display: inline-block;
@@ -90,8 +100,6 @@
   border-radius: 50%;
   overflow: hidden;
 }
-
-/* Imagem redonda */
 .profile-pic-wrapper img {
   width: 100%;
   height: 100%;
@@ -100,41 +108,54 @@
   border-radius: 50%;
   transition: transform 0.3s ease;
 }
-
-/* Overlay do X */
-.profile-pic-wrapper::after {
-  content: "✖";
+/* Ícone de caneta como overlay */
+#editPhoto {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  font-size: 32px;
-  color: #fff;
-  opacity: 0;
-  background: rgba(229, 57, 53, 0.6);
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  background: rgba(56, 142, 60, 0.7); /* verde com transparência */
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  color: white;
+  font-size: 28px;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none; /* ainda deixa o clique passar */
 }
 
-/* Hover: Zoom leve e X aparece */
-.profile-pic-wrapper:hover img {
-  transform: scale(1.1);
-}
-.profile-pic-wrapper:hover::after {
-  transform: translate(-50%, -50%) scale(1);
+/* Animação ao passar mouse */
+.profile-pic-wrapper:hover #editPhoto{
   opacity: 1;
+  transform: scale(1);
 }
 
+
+
+
+/* Botões Modal */
+.modal-actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+}
+.modal-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+#confirmCrop { background: #388e3c; color: white; }
 
 </style>
 
 </head>
-<body>    
+<body class="{{ theme }}"> 
     <div class="contreg">
     <div class="board">
         <button class="back-btn" onclick="window.location.href='{{ url_for('home') }}'">
@@ -147,19 +168,42 @@
             {% if mensagem %}
             <p style="color: red;">{{ mensagem | safe }}</p>
             {% endif %}
-
-            <form method="post" enctype="multipart/form-data" name="update">
-                <div style="text-align:center; margin-bottom:15px;">
-                  <div class="profile-pic-wrapper">
+<div style="text-align:center; margin-bottom:15px;">
+    <div class="profile-pic-wrapper">
     <img id="preview-pic" src="{{ user_profile_image }}">
+    <span id="editPhoto" class="edit-icon"><i class="fas fa-pen"></i></span>
 </div>
-<br>
-<label for="profile-pic" style="cursor:pointer;">
-    <i class="fas fa-camera" style="font-size:32px; color:#388e3c;"></i>
-</label>
-<input type="file" id="profile-pic" name="profile_image" accept="image/*" style="display:none;">
+    <br>
+    <label for="profile-pic" style="cursor:pointer;">
+        <i class="fas fa-camera" style="font-size:32px; color:#388e3c;"></i>
+    </label>
+    
+    <br>
 
+</div>
+
+<div id="cropModal" class="modal">
+  <div class="modal-content">
+    <span id="cancelCrop" type="button"  class="close">&times;</span>
+    <h3>Editar imagem</h3>
+    <div style="max-width:300px; margin:auto;">
+      <img id="cropImage" style="max-width:100%; display:block;">
+    </div>
+    <div class="modal-actions" style="margin-top: 15px; justify-content: space-between;">
+      <button id="deletePhoto" type="button" style="background:#e53935; color:white; border:none; border-radius:20px; padding:8px 16px; cursor:pointer; font-weight:bold;">🗑️ Deletar Foto</button>
+      <div style="display:flex; gap:10px;">
+        <button id="confirmCrop" type="button" class="btn-ok">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+            <form id="update-form" method="post" enctype="multipart/form-data" name="update_user">
+                
+<input type="file" id="profile-pic" name="profile_image" accept="image/*" style="display:none;">
              
+
+
+
                 </div>
 
                 <div class="input-group">
@@ -195,89 +239,146 @@
     </form>
   </div>
 </div>
-    <script>
-      
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+let cropper;
+const uploadInput = document.getElementById('profile-pic');
+const previewImage = document.getElementById('preview-pic');
+const modal = document.getElementById('cropModal');
+const cropImage = document.getElementById('cropImage');
+const closeModal = document.getElementById('closeModal');
+const confirmCrop = document.getElementById('confirmCrop');
+const deletePhotoBtn = document.getElementById('deletePhoto');
+const cancelCropBtn = document.getElementById('cancelCrop');
+const editPhotoBtn = document.getElementById('editPhoto');
+const defaultImg = "/profpic/default.png";
 
-        document.getElementById("profile-pic").addEventListener("change", function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById("preview-pic").src = e.target.result;
-        }
-        reader.readAsDataURL(file);
+function checkIfDefault() {
+    if (previewImage.src.includes("default.png")) {
+        editPhotoBtn.style.display = "none";
     }
+}
+checkIfDefault();
+
+function openCropper(imageSrc) {
+    cropImage.src = imageSrc;
+    modal.style.display = 'block';
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(cropImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        movable: true,
+        zoomable: true,
+        background: false
+    });
+}
+
+document.querySelector(".profile-pic-wrapper").addEventListener("click", function () {
+    if (previewImage.src.includes("default.png")) return;
+    if (previewImage.src.includes("{{user_profile_image}}")){ 
+    openCropper("{{ user_profile_image }}");}
+    openCropper(previewImage.src);
 });
-      document.querySelector(".profile-pic-wrapper").addEventListener("click", function () {
-    const img = this.querySelector("img");
-    const defaultImg = "/profpic/default.png";
 
-    // Se já está no default, não faz nada
-    if (img.src.includes("default.png")) return;
 
-    // Anima fade-out
-    img.style.transition = "opacity 0.3s ease";
-    img.style.opacity = "0";
+uploadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => openCropper(reader.result);
+    reader.readAsDataURL(file);
+});
 
-    setTimeout(() => {
-        img.src = `${defaultImg}?t=${Date.now()}`;
-        img.style.opacity = "1";
-    }, 300);
+confirmCrop.addEventListener('click', () => {
+    if (!cropper) return;
 
+    cropper.getCroppedCanvas({ width: 300, height: 300 }).toBlob((blob) => {
+        const file = new File([blob], "profile.png", { type: "image/png" });
+        
+        // Criar um objeto DataTransfer para injetar no input file
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        uploadInput.files = dataTransfer.files;
+
+        previewImage.src = URL.createObjectURL(file); 
+        modal.style.display = 'none';
+        cropper.destroy();
+        cropper = null;
+        editPhotoBtn.style.display = 'flex';
+    }, "image/png");
 });
 
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.toggle-password').forEach(icon => {
-                icon.addEventListener('click', function() {
-                    const input = this.parentElement.querySelector('input');
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        this.classList.remove('fa-eye');
-                        this.classList.add('fa-eye-slash');
-                    } else {
-                        input.type = 'password';
-                        this.classList.remove('fa-eye-slash');
-                        this.classList.add('fa-eye');
-                    }
-                });
-            });
+deletePhotoBtn.addEventListener('click', () => {
+    previewImage.src = defaultImg + "?t=" + Date.now();
+    modal.style.display = 'none';
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    uploadInput.value = "";
+    editPhotoBtn.style.display = "none";
+});
+
+cancelCropBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    uploadInput.value = "";
+});
+
+closeModal.addEventListener('click', () => {
+    modal.style.display = 'none';
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    uploadInput.value = "";
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.toggle-password').forEach(icon => {
+        icon.addEventListener('click', function () {
+            const input = this.parentElement.querySelector('input');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.classList.remove('fa-eye');
+                this.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                this.classList.remove('fa-eye-slash');
+                this.classList.add('fa-eye');
+            }
         });
-
+    });
+});
 
 function openDeleteModal() {
-  document.getElementById('senha').value = '';
-  document.getElementById('deleteModal').style.display = 'flex';
+    document.getElementById('senha').value = '';
+    document.getElementById('deleteModal').style.display = 'flex';
 }
 
 function closeDeleteModal() {
-  document.getElementById('deleteModal').style.display = 'none';
+    document.getElementById('deleteModal').style.display = 'none';
 }
+
 function confirmpass(event) {
-  const senha = document.getElementById("senha").value.trim();
-
-  // Bloqueia se o campo estiver vazio
-  if (!senha) {
-    alert("Por favor, digite sua senha.");
-    event.preventDefault();
-    return false;
-  }
-
-  // Pergunta confirmação ao usuário
-  const confirmar = confirm("Tem certeza que deseja deletar sua conta?");
-  if (!confirmar) {
-    event.preventDefault();
-    return false;
-  }
-
-  // ✅ Se tudo estiver OK, permite o envio
-  return true;
-
+    const senha = document.getElementById("senha").value.trim();
+    if (!senha) {
+        alert("Por favor, digite sua senha.");
+        event.preventDefault();
+        return false;
+    }
+    const confirmar = confirm("Tem certeza que deseja deletar sua conta?");
+    if (!confirmar) {
+        event.preventDefault();
+        return false;
+    }
+    return true;
 }
+</script>
 
-
-
-
-    </script>
 </body>
 </html>

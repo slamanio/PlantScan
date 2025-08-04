@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link  href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="shortcut icon" href="/static/assets/imgs/chip.png">
     <title>PlantScan</title>
 </head>
 <body>    
+    
     <div class="contreg">
         <div class="board">
             <button class="back-btn" onclick="window.location.href='{{ url_for('index') }}'">
@@ -21,14 +24,24 @@
         <p style="color: red;">{{ mensagem | safe }}</p>
     {% endif %}
 
-    <div style="text-align:center; margin-bottom:15px;">
-        <img id="preview-pic" src="/profpic/default.png" 
-             style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #388e3c;">
-        <br>
+    
+<div style="text-align:center; margin-bottom:15px;">
+    <input type="file" id="profile-pic" accept="image/*" style="display:none;">
+    <img id="preview-pic" src="/profpic/default.png" 
+         style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #388e3c;">
+</div>
+ <div id="cropModal" class="modal">
+    <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h3>Editar imagem</h3>
+        <div style="max-width:400px; margin:auto;">
+            <img id="cropImage" style="max-width:100%; display:block;">
+        </div>
+        <button id="confirmCrop" class="btn-ok">OK</button>
     </div>
-
+</div>
     <!-- enctype é necessário para envio de arquivos -->
-    <form method="post" name="register_form" enctype="multipart/form-data">
+    <form id="register-form" method="post" name="register_form" enctype="multipart/form-data">
         <div class="input-group">
             <input type="text" id="full_name" name="full_name" placeholder=" " required>
             <label for="full_name">Nome completo</label>
@@ -56,6 +69,7 @@
         </div>
 
         <button type="submit" class="submit-btn">Cadastrar</button>
+        
     </form>
 </div>
 
@@ -64,37 +78,84 @@
 
         </div>
     </div>
-
+   
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
-        
-        // Preview da imagem selecionada
-document.getElementById("profile-pic").addEventListener("change", function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById("preview-pic").src = e.target.result;
-        }
-        reader.readAsDataURL(file);
-    }
+  let cropper, croppedBlob;
+const uploadInput = document.getElementById('profile-pic');
+const previewImage = document.getElementById('preview-pic');
+const modal = document.getElementById('cropModal');
+const cropImage = document.getElementById('cropImage');
+const closeModal = document.getElementById('closeModal');
+const confirmCrop = document.getElementById('confirmCrop');
+const registerForm = document.getElementById('register-form');
+
+
+uploadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+        cropImage.src = reader.result;
+        modal.style.display = 'block';
+
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(cropImage, {
+            aspectRatio: 1,
+            viewMode: 1,
+            movable: true,
+            zoomable: true,
+            background: false,
+        });
+    };
+    reader.readAsDataURL(file);
 });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.toggle-password').forEach(icon => {
-                icon.addEventListener('click', function() {
-                    const input = this.parentElement.querySelector('input');
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        this.classList.remove('fa-eye');
-                        this.classList.add('fa-eye-slash');
-                    } else {
-                        input.type = 'password';
-                        this.classList.remove('fa-eye-slash');
-                        this.classList.add('fa-eye');
-                    }
-                });
-            });
-        });
+
+confirmCrop.addEventListener('click', () => {
+    if (!cropper) return;
+
+    const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+    canvas.toBlob((blob) => {
+        croppedBlob = blob; 
+        previewImage.src = canvas.toDataURL('image/jpeg'); 
+    }, 'image/jpeg');
+
+    modal.style.display = 'none';
+    cropper.destroy();
+    cropper = null;          
+    uploadInput.value = "";  
+});
+
+
+closeModal.addEventListener('click', () => {
+    modal.style.display = 'none';
+    if (cropper) cropper.destroy();
+    cropper = null;
+    uploadInput.value = "";
+});
+
+
+registerForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(registerForm);
+
+
+    if (croppedBlob) {
+        formData.append('profile_image', croppedBlob, 'profile.jpg');
+    }
+
+    fetch(registerForm.action || window.location.pathname, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.text())
+    .then(data => {
+        window.location.href = "/login"; 
+    })
+    .catch(err => console.error('Erro:', err));
+});
     </script>
 </body>
 </html>
