@@ -12,147 +12,7 @@
     <link href="https://unpkg.com/cropperjs/dist/cropper.css" rel="stylesheet"/>
     <script src="https://unpkg.com/cropperjs"></script>
     <title>PlantScan</title>
-   <style>
-/* Botão Deletar Conta */
-.delete-btn {
-  margin-top: 20px;
-  width: 100%;
-  padding: 12px;
-  background-color: #e53935;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-size: 1em;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s ease;
-}
-.delete-btn:hover { background-color: #c62828; }
-
-/* Modal Genérico */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 9999;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  justify-content: center;
-  align-items: center;
-}
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 400px;
-  position: relative;
-  text-align: center;
-}
-
-/* Botão Fechar X */
-.close {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-.close:hover { color: #e53935; }
-/* Botão Editar Foto */
-#editPhoto {
-  background: #388e3c;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.2s ease;
-}
-#editPhoto:hover {
-  background: #2e7d32;
-  transform: scale(1.05);
-}
-#editPhoto:active {
-  transform: scale(0.98);
-}
-.btn-cancel {
-  background: #ccc;
-  color: #333;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-
-/* Foto de perfil */
-.profile-pic-wrapper {
-  position: relative;
-  display: inline-block;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-}
-.profile-pic-wrapper img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border: 2px solid #388e3c;
-  border-radius: 50%;
-  transition: transform 0.3s ease;
-}
-/* Ícone de caneta como overlay */
-#editPhoto {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: rgba(56, 142, 60, 0.7); /* verde com transparência */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-size: 28px;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none; /* ainda deixa o clique passar */
-}
-
-/* Animação ao passar mouse */
-.profile-pic-wrapper:hover #editPhoto{
-  opacity: 1;
-  transform: scale(1);
-}
-
-
-
-
-/* Botões Modal */
-.modal-actions {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 15px;
-}
-.modal-actions button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: bold;
-}
-#confirmCrop { background: #388e3c; color: white; }
-
-</style>
+   
 
 </head>
 <body class="{{ theme }}"> 
@@ -217,14 +77,14 @@
                 </div>
 
                 <button type="submit" class="submit-btn">Atualizar</button>
-                <!-- Botão Deletar Conta -->
+                
 
 
             </form>
             
   <button type="button" class="delete-btn" onclick="openDeleteModal()">🗑️ Deletar Conta</button>
 
-<!-- Modal -->
+
 <div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
   <div style="background:#fff; padding:20px; border-radius:10px; width:300px; text-align:center;">
     <h3>Confirmar Exclusão</h3>
@@ -295,7 +155,7 @@ confirmCrop.addEventListener('click', () => {
     cropper.getCroppedCanvas({ width: 300, height: 300 }).toBlob((blob) => {
         const file = new File([blob], "profile.png", { type: "image/png" });
         
-        // Criar um objeto DataTransfer para injetar no input file
+    
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
         uploadInput.files = dataTransfer.files;

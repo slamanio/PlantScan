@@ -159,13 +159,13 @@ def login_user(
 @router.get("/homepage", response_class=HTMLResponse, name="home")
 def homepage(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
+    user = db.query(models.User).filter(models.User.id == user_id).first()
     user_name = request.session.get("user_name")
     user_email = request.session.get("user_email")
-    user_theme = request.session.get("user_theme")
-    user_realtheme = db.query(User.theme).filter(User.theme == user_theme).first()
     user_profile_image = db.query(User.profile_image).filter(User.email == user_email).first()
     user_plants = db.query(userPlant.plant_name).filter(userPlant.user_id == user_id).all()
     image_urls = f"/profpic/{user_profile_image[0]}"
+    theme = user.theme if user and user.theme else "light"
     if image_urls is None:
         image_urls = f"/profpic/default.png"
 
@@ -180,7 +180,7 @@ def homepage(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "user_name": user_name,
             "profile_image": image_urls,
-            "theme": user_realtheme,
+            "theme": theme,
             "userplants": user_plants,
             "plantsall": plantsall,
             "top_plants": top_plants
@@ -195,9 +195,12 @@ def logout(request: Request):
 
 @router.get("/update", name="update")
 def update(request: Request, db: Session = Depends(get_db)):
+    user_id = request.session.get("user_id")
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    
     user_name = request.session.get("user_name")
     user_email = request.session.get("user_email")
-    user_theme = request.session.get("user_theme")
+    theme = user.theme if user and user.theme else "light"
     user_profile_image = db.query(User.profile_image).filter(User.full_name == user_name).first()
     image_urls = f"/profpic/{user_profile_image[0]}"
     if image_urls is None:
@@ -207,13 +210,13 @@ def update(request: Request, db: Session = Depends(get_db)):
         "user_name": user_name,
         "user_email": user_email,
         "user_profile_image": image_urls,
-        "theme": user_theme
+        "theme": theme
     })
 
 @router.post("/update_theme")
 async def update_theme(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
-    theme = data.get("theme", "light", "dark")
+    theme = data.get("theme", "light")
     user_id = request.session.get("user_id")
     
     user = db.query(models.User).filter(models.User.id == user_id).first()
@@ -283,10 +286,6 @@ async def update_user(
             user.email = email
             request.session["user_email"] = email
 
-        if user.profile_image and user.profile_image != "default.png":
-            old_path = os.path.join("app", "profpic", user.profile_image)
-            if os.path.exists(old_path):
-                os.remove(old_path)
 
         if profile_image:
             file_bytes = await profile_image.read()
@@ -294,7 +293,10 @@ async def update_user(
                 file_hash = hashlib.sha256(file_bytes).hexdigest()
                 filename = f"imagem_{user.id}_{file_hash[:8]}.png"
                 filepath = os.path.join("app", "profpic", filename)
-    
+                if user.profile_image and user.profile_image != "default.png":
+                    old_path = os.path.join("app", "profpic", user.profile_image)
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
                 with open(filepath, "wb") as f:
                     f.write(file_bytes)
 
