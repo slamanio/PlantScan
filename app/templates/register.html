@@ -40,8 +40,8 @@
         <button id="confirmCrop" class="btn-ok">OK</button>
     </div>
 </div>
-    <!-- enctype é necessário para envio de arquivos -->
-    <form id="register-form" method="post" name="register_form" enctype="multipart/form-data">
+    <div >
+    <form id="registerForm" method="post" name="register_form" enctype="multipart/form-data">
         <div class="input-group">
             <input type="text" id="full_name" name="full_name" placeholder=" " required>
             <label for="full_name">Nome completo</label>
@@ -72,7 +72,7 @@
         
     </form>
 </div>
-
+</div>
             <br>
             <a href="{{url_for('login_form')}}">Já possui uma conta?</a>
 
@@ -88,7 +88,8 @@ const modal = document.getElementById('cropModal');
 const cropImage = document.getElementById('cropImage');
 const closeModal = document.getElementById('closeModal');
 const confirmCrop = document.getElementById('confirmCrop');
-const registerForm = document.getElementById('register-form');
+const registerForm = document.getElementById('registerForm');
+
 
 
 uploadInput.addEventListener('change', (e) => {
@@ -124,10 +125,9 @@ confirmCrop.addEventListener('click', () => {
 
     modal.style.display = 'none';
     cropper.destroy();
-    cropper = null;          
-    uploadInput.value = "";  
+    cropper = null;
+    uploadInput.value = "";
 });
-
 
 closeModal.addEventListener('click', () => {
     modal.style.display = 'none';
@@ -136,12 +136,12 @@ closeModal.addEventListener('click', () => {
     uploadInput.value = "";
 });
 
-
 registerForm.addEventListener('submit', function(event) {
-    event.preventDefault();
+    event.preventDefault(); // impede envio padrão
+
     const formData = new FormData(registerForm);
 
-
+    // 🔥 Se o usuário cortou uma imagem, anexamos
     if (croppedBlob) {
         formData.append('profile_image', croppedBlob, 'profile.jpg');
     }

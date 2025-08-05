@@ -232,18 +232,35 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     nome = form.get("nome")
     planta = db.query(Plant).filter(Plant.name == nome).first()
-    
+    plantcond = "Green"
+    plantcond1 = "Yellow"
+    plantcond2 = "Red"
     if planta:
-        plantimage = db.query(models.PlantImage).filter(models.PlantImage.plant_id == planta.id).all()
-        image_urls = [f"/uploads/{img.image_path}" for img in plantimage]
+        # 🔹 Consulta imagens da planta
+        imagens = db.query(models.PlantImage).filter(models.PlantImage.plant_id == planta.id).all()
+
+    # 🔹 Consulta imagens da planta separadas por cor
+        cores = ["Green", "Yellow", "Red"]
+        imagens_por_cor = {cor.lower(): [] for cor in cores}
+
+        for cor in cores:
+            imgs = db.query(models.PlantImage).filter(
+                models.PlantImage.plant_id == planta.id,
+                models.PlantImage.color == cor
+            ).all()
+            imagens_por_cor[cor.lower()] = [f"/uploads/{img.image_path}" for img in imgs]
+
         return JSONResponse(content={
             "especie": planta.name,
             "familia": planta.species,
             "descricao": planta.description,
-            "image": image_urls
+            "image": [f"/uploads/{img.image_path}" for img in imagens],
+            "imagegreen": imagens_por_cor["green"],
+            "imageyellow": imagens_por_cor["yellow"],
+            "imagered": imagens_por_cor["red"]
         })
-    else:
-        return JSONResponse(content={
+      
+    return JSONResponse(content={
             "especie": "Desconhecida",
             "familia": "Desconhecida",
             "descricao": "Não encontramos dados para essa planta.",
@@ -350,6 +367,7 @@ async def analyze_with_gemini(file: UploadFile = File(...)):
           "especie": "<Aqui irá a o nome da planta, TENTE COLOCAR O NOME MAIS SIMPLES POSSÍVEL, SEMPRE NO SINGULAR E CONTENDO APENAS 1 PALAVRA SE POSSÍVEL.>",
           "familia": "<Aqui irá a família que a planta pertence, pode dar detalhes sobre e até mesmo dar alguns exemplos breves de outras plantas ou arvores da familia>",
           "condicao_saude": <aqui irá a saúde da planta>,
+          "colorAlert": <aqui você dará uma cor baseada na condição da planta, que vai de "Green", "Yellow" ou "Red", sendo vermelho a pior das situações, e verde a melhor delas. (APENAS RETORNE UMA DAS 3 CORES, NADA MAIS QUE ISSO)>
           "isplant": <true ou false>
         }
         
@@ -385,6 +403,7 @@ async def register_plant(request: Request,
     especie: str = Form(...),
     descricao: str = Form(...),
     image: UploadFile = File(None),
+    cor: str = Form(...),
     db: Session = Depends(get_db)
 ):
     file_hash = None
@@ -416,7 +435,8 @@ async def register_plant(request: Request,
         if file_hash:
             duplicate = db.query(models.PlantImage).filter(
                 models.PlantImage.plant_id == existing_plant.id,
-                models.PlantImage.image_hash == file_hash
+                models.PlantImage.image_hash == file_hash,
+                models.PlantImage.color == cor
             ).first()
 
             if not duplicate:
@@ -428,6 +448,7 @@ async def register_plant(request: Request,
                 new_image = models.PlantImage(
                     image_path=filename,
                     image_hash=file_hash,
+                    color = cor,
                     plant_id=existing_plant.id
                 )
                 db.add(new_image)
@@ -443,6 +464,7 @@ async def register_plant(request: Request,
         name=nome,
         species=especie,
         description=descricao,
+        color=cor,
         count=1
     )
 
@@ -467,7 +489,8 @@ async def register_plant(request: Request,
 
         new_image = models.PlantImage(
             image_path=filename,
-            image_hash=file_hash, 
+            image_hash=file_hash,
+            color = new_plant.color, 
             plant_id=new_plant.id
         )
         db.add(new_image)

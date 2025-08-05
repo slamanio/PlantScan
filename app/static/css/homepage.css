@@ -22,6 +22,161 @@
   background: #f0f0f0;
 }
 
+/* ➤ Container Situação das Plantas */
+.plant-status-container {
+  position: fixed;
+  top: 80px;
+  left: 40px; /* posição oposta ao histórico */
+  width: 250px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.07);
+  z-index: 900;
+  transition: left 0.3s ease-in-out;
+}
+
+.plant-status-container h3 {
+  color: #2f855a;
+  border-left: 4px solid #48bb78;
+  padding-left: 10px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.plant-status-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plant-status-container li {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  color: #fff;
+  transition: transform 0.2s ease;
+}
+
+.plant-status-container li:hover {
+  transform: scale(1.03);
+}
+
+/* ➤ Cores de status */
+.status-green {
+  background: #4CAF50;
+}
+.status-yellow {
+  background: #FFC107;
+  color: #333;
+}
+.status-red {
+  background: #F44336;
+}
+
+/* ✅ Dark Mode para o container de status */
+body.dark .plant-status-container {
+  background: #1b1a1a;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+body.dark .plant-status-container h3 {
+  color: #a5d6a7;
+  border-left: 4px solid #66bb6a;
+}
+
+body.dark .plant-status-container li.status-green {
+  background: #388e3c;
+}
+body.dark .plant-status-container li.status-yellow {
+  background: #fbc02d;
+  color: #222;
+}
+body.dark .plant-status-container li.status-red {
+  background: #d32f2f;
+}
+
+/* ✅ Mobile: container retrátil */
+@media (max-width: 1000px) {
+  .plant-status-container {
+    left: -100%; /* escondido fora da tela */
+    top: 0;
+    height: 100%;
+    width: 50%;
+    max-height: 100%;
+    border-radius: 0;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+  }
+
+  .plant-status-container.open {
+    left: 0; /* aparece */
+  }
+  
+}
+/* 🔥 Botão para abrir/fechar painel de status */
+#togglePlantStatus {
+  position: fixed;
+  top: 90px;
+  left: 300px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+/* Hover */
+#togglePlantStatus:hover {
+  background: #45a049;
+  transform: scale(1.1);
+}
+
+/* ✅ Ajuste no modo escuro */
+body.dark #togglePlantStatus {
+  background: #66bb6a;
+}
+
+/* ✅ Esconde no desktop */
+@media (min-width: 1001px) {
+  #togglePlantStatus {
+    display: none;
+  }
+}
+
+/* ✅ Mostra apenas no mobile */
+@media (max-width: 1000px) {
+  #togglePlantStatus {
+    display: block;
+    top: 20px;
+    left: 20px;
+  }
+}
+
+/* ✅ Esconde o botão de histórico no desktop */
+@media (min-width: 1001px) {
+  #toggleHistory {
+    display: none;
+  }
+}
+
+/* ✅ Mostra apenas no mobile */
+@media (max-width: 1000px) {
+  #toggleHistory {
+    display: block;
+  }
+}
+
 
 
 body.dark {

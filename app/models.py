@@ -32,6 +32,7 @@ class Plant(Base):
     name = Column(String(1500), nullable=False)
     species = Column(String(1500), nullable=False)
     description = Column(String(1500), nullable=True)
+    color = Column(String(255), nullable=True)
     count = Column(Integer, default=0)
     images = relationship("PlantImage", back_populates="plant")
 
@@ -42,6 +43,7 @@ class PlantImage(Base):
     id = Column(Integer, primary_key=True, index=True)
     image_path = Column(String(255), nullable=False)
     image_hash = Column(String(255), unique=True, nullable=False)
+    color = Column(String(255), nullable=False)
     plant_id = Column(Integer, ForeignKey("plants.id", ondelete="CASCADE"))
 
     plant = relationship("Plant", back_populates="images")
