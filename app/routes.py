@@ -10,6 +10,7 @@ import io
 import shutil, os
 import hashlib
 from .models import User, Plant, PlantImage, userPlant
+from sqlalchemy.orm import joinedload
 from . import models, database
 from passlib.hash import bcrypt
 from passlib.context import CryptContext
@@ -105,22 +106,25 @@ async def register_user(request: Request,
         })
     
     if profile_image:
-        file_bytes = await profile_image.read()
-        if file_bytes:
-            file_hash = hashlib.sha256(file_bytes).hexdigest()
-            filename = f"imagem_{user.id}_{file_hash[:8]}.png"
-            filepath = os.path.join("app","profpic", filename)
+        # 🔹 Verifica se o usuário enviou uma imagem customizada
+        if profile_image.filename and profile_image.filename.lower() != "default.png":
+            file_bytes = await profile_image.read()
+            if file_bytes:
+                file_hash = hashlib.sha256(file_bytes).hexdigest()
+                filename = f"imagem_{user.id}_{file_hash[:8]}.png"
+                filepath = os.path.join("app", "profpic", filename)
 
-        # Cria diretório se não existir
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                with open(filepath, "wb") as f:
+                    f.write(file_bytes)
 
-            with open(filepath, "wb") as f:
-                f.write(file_bytes)
+                user.profile_image = filename
         else:
-            filename = f"default.png"
-        # Atualiza usuário com o caminho da imagem
-        user.profile_image = filename
+            # 🔹 Caso a imagem enviada seja "default.png"
+            user.profile_image = "default.png"
+
         db.commit()
+    
 
     return RedirectResponse(url="/", status_code=302)
 
@@ -164,7 +168,15 @@ def homepage(request: Request, db: Session = Depends(get_db)):
     user_email = request.session.get("user_email")
     user_profile_image = db.query(User.profile_image).filter(User.email == user_email).first()
     user_plants = db.query(userPlant.plant_name).filter(userPlant.user_id == user_id).all()
+    userplants_full = (
+    db.query(models.userPlant)
+    .filter(models.userPlant.user_id == user_id)
+    .options(joinedload(models.userPlant.planty).joinedload(models.Plant.images))
+    .all()
+)
+
     image_urls = f"/profpic/{user_profile_image[0]}"
+
     theme = user.theme if user and user.theme else "light"
     if image_urls is None:
         image_urls = f"/profpic/default.png"
@@ -173,8 +185,6 @@ def homepage(request: Request, db: Session = Depends(get_db)):
     .order_by(models.Plant.count.desc())\
     .limit(3)\
     .all()
-
-    plantsall = db.query(models.Plant).all()
     if user_name:
         return templates.TemplateResponse("homepage.html", {
             "request": request,
@@ -182,8 +192,9 @@ def homepage(request: Request, db: Session = Depends(get_db)):
             "profile_image": image_urls,
             "theme": theme,
             "userplants": user_plants,
-            "plantsall": plantsall,
-            "top_plants": top_plants
+            "top_plants": top_plants,
+            "userplants_full": userplants_full
+
         })
     
     return RedirectResponse(url="/login", status_code=302)

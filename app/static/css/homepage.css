@@ -21,12 +21,87 @@
 #theme-toggle:hover {
   background: #f0f0f0;
 }
+.plant-status-container {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin: 20px 0;
+    transition: background 0.3s ease;
+}
 
-/* ➤ Container Situação das Plantas */
+.plant-status-container h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2f855a;
+    margin-bottom: 15px;
+    border-left: 5px solid #4caf50;
+    padding-left: 10px;
+}
+
+/* Estilo da lista */
+#plantStatusList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Card da planta */
+.plant-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Efeito hover */
+.plant-card:hover {
+    background: #e6f9ed;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Ícone */
+.plant-icon-wrapper {
+    font-size: 24px;
+    background: #4caf50;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Nome e subtítulo */
+.plant-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.plant-info strong {
+    font-size: 16px;
+    color: #333;
+}
+
+.plant-subtitle {
+    font-size: 13px;
+    color: #666;
+}
+
+/* 🌿 Container fixo */
 .plant-status-container {
   position: fixed;
   top: 80px;
-  left: 40px; /* posição oposta ao histórico */
+  left: 40px;
   width: 250px;
   max-height: 80vh;
   overflow-y: auto;
@@ -38,6 +113,7 @@
   transition: left 0.3s ease-in-out;
 }
 
+/* 🌱 Título */
 .plant-status-container h3 {
   color: #2f855a;
   border-left: 4px solid #48bb78;
@@ -46,59 +122,72 @@
   margin-bottom: 10px;
 }
 
+/* Lista */
 .plant-status-container ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
+/* 🍃 Itens */
 .plant-status-container li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f7f7f7;
   padding: 10px;
   margin-bottom: 8px;
-  border-radius: 8px;
-  text-align: center;
+  border-radius: 10px;
+  text-align: left;
   font-weight: bold;
-  color: #fff;
-  transition: transform 0.2s ease;
+  color: #2d3748;
+  font-size: 16px;
+  transition: transform 0.2s ease, background 0.3s ease;
 }
 
 .plant-status-container li:hover {
   transform: scale(1.03);
+  background: #e8f5e9;
 }
 
-/* ➤ Cores de status */
-.status-green {
-  background: #4CAF50;
-}
-.status-yellow {
-  background: #FFC107;
-  color: #333;
-}
-.status-red {
-  background: #F44336;
+/* 🌸 Imagem */
+.plant-images img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #48bb78;
 }
 
-/* ✅ Dark Mode para o container de status */
+/* 🟢 Status Colors */
+.status-green { background: #c8facc; }
+.status-yellow { background: #fff6d1; color: #333; }
+.status-red { background: #f8d7da; }
+
+/* 🌙 DARK MODE */
 body.dark .plant-status-container {
-  background: #1b1a1a;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+  background: #2b2b2b;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
 }
 
 body.dark .plant-status-container h3 {
-  color: #a5d6a7;
-  border-left: 4px solid #66bb6a;
+  color: #9ae6b4;
+  border-left-color: #68d391;
 }
 
-body.dark .plant-status-container li.status-green {
-  background: #388e3c;
+body.dark .plant-status-container li {
+  background: #3a3a3a;
+  color: #f0f0f0;
 }
-body.dark .plant-status-container li.status-yellow {
-  background: #fbc02d;
-  color: #222;
+
+body.dark .plant-status-container li:hover {
+  background: #4a4a4a;
 }
-body.dark .plant-status-container li.status-red {
-  background: #d32f2f;
+
+body.dark .plant-images img {
+  border: 2px solid #9ae6b4;
 }
+
 
 /* ✅ Mobile: container retrátil */
 @media (max-width: 1000px) {

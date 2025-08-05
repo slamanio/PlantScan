@@ -137,11 +137,9 @@ closeModal.addEventListener('click', () => {
 });
 
 registerForm.addEventListener('submit', function(event) {
-    event.preventDefault(); // impede envio padrão
+    event.preventDefault(); 
 
     const formData = new FormData(registerForm);
-
-    // 🔥 Se o usuário cortou uma imagem, anexamos
     if (croppedBlob) {
         formData.append('profile_image', croppedBlob, 'profile.jpg');
     }
@@ -151,8 +149,17 @@ registerForm.addEventListener('submit', function(event) {
         body: formData
     })
     .then(res => res.text())
-    .then(data => {
-        window.location.href = "/login"; 
+    .then(html => {
+        if (html.includes("Este email já está cadastrado no sistema.") ||
+            html.includes("As senhas não coincidem.") ||
+            html.includes("Senha deve conter no mínimo")) {
+            
+            // 🔥 Exibe o erro no formulário sem redirecionar
+            document.body.innerHTML = html;
+        } else {
+            // ✅ Se não houver erro, segue para login
+            window.location.href = "/login";
+        }
     })
     .catch(err => console.error('Erro:', err));
 });

@@ -15,16 +15,22 @@ class User(Base):
     theme = Column(String(255), nullable=True)
 
     userplants = relationship("userPlant", back_populates="user", cascade="all, delete", passive_deletes=True)
+
+
 class userPlant(Base):
     __tablename__ = 'userplants'
 
     id = Column(Integer, primary_key=True, index=True)
     plant_name = Column(String(100), nullable=False)
     plant_id = Column(Integer, ForeignKey('plants.id'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    
+    # 🔹 Permitindo NULL no user_id e desassociação quando o user for deletado
+    user_id = Column(Integer, ForeignKey('users.id', ondelete="SET NULL"), nullable=True)
 
     planty = relationship("Plant", back_populates="plants")
     user = relationship("User", back_populates="userplants")
+
+
 class Plant(Base):
     __tablename__ = 'plants'
 
@@ -34,12 +40,14 @@ class Plant(Base):
     description = Column(String(1500), nullable=True)
     color = Column(String(255), nullable=True)
     count = Column(Integer, default=0)
-    images = relationship("PlantImage", back_populates="plant")
 
+    images = relationship("PlantImage", back_populates="plant")
     plants = relationship("userPlant", back_populates="planty")
+
 
 class PlantImage(Base):
     __tablename__ = 'plant_images'
+
     id = Column(Integer, primary_key=True, index=True)
     image_path = Column(String(255), nullable=False)
     image_hash = Column(String(255), unique=True, nullable=False)
