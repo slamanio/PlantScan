@@ -9,7 +9,7 @@ import google.generativeai as genai
 import io
 import shutil, os
 import hashlib
-from .models import User, Plant, PlantImage, userPlant
+from .models import User, Plant, PlantImage
 from sqlalchemy.orm import joinedload
 from . import models, database
 from passlib.hash import bcrypt
@@ -106,7 +106,6 @@ async def register_user(request: Request,
         })
     
     if profile_image:
-        # 🔹 Verifica se o usuário enviou uma imagem customizada
         if profile_image.filename and profile_image.filename.lower() != "default.png":
             file_bytes = await profile_image.read()
             if file_bytes:
@@ -119,8 +118,7 @@ async def register_user(request: Request,
                     f.write(file_bytes)
 
                 user.profile_image = filename
-        else:
-            # 🔹 Caso a imagem enviada seja "default.png"
+        else:   
             user.profile_image = "default.png"
 
         db.commit()
@@ -159,7 +157,6 @@ def login_user(
     
 #Área do cliente
 
-
 @router.get("/homepage", response_class=HTMLResponse, name="home")
 def homepage(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
@@ -167,13 +164,7 @@ def homepage(request: Request, db: Session = Depends(get_db)):
     user_name = request.session.get("user_name")
     user_email = request.session.get("user_email")
     user_profile_image = db.query(User.profile_image).filter(User.email == user_email).first()
-    user_plants = db.query(userPlant.plant_name).filter(userPlant.user_id == user_id).all()
-    userplants_full = (
-    db.query(models.userPlant)
-    .filter(models.userPlant.user_id == user_id)
-    .options(joinedload(models.userPlant.planty).joinedload(models.Plant.images))
-    .all()
-)
+
 
     image_urls = f"/profpic/{user_profile_image[0]}"
 
@@ -191,9 +182,7 @@ def homepage(request: Request, db: Session = Depends(get_db)):
             "user_name": user_name,
             "profile_image": image_urls,
             "theme": theme,
-            "userplants": user_plants,
             "top_plants": top_plants,
-            "userplants_full": userplants_full
 
         })
     
@@ -243,9 +232,6 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     nome = form.get("nome")
     planta = db.query(Plant).filter(Plant.name == nome).first()
-    plantcond = "Green"
-    plantcond1 = "Yellow"
-    plantcond2 = "Red"
     if planta:
         # 🔹 Consulta imagens da planta
         imagens = db.query(models.PlantImage).filter(models.PlantImage.plant_id == planta.id).all()
@@ -278,6 +264,42 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
             "image": None
         })
 
+@router.post("/userplant-info")
+async def planta_info(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    nome = form.get("nome")
+    user_id = request.session.get("user_id")
+    plant = db.query(Plant).filter(Plant.name == nome).first()
+    planta = db.query(PlantImage).filter(Plant.name == nome).first()
+
+    if planta:
+        # 🔹 Consulta imagens da planta
+        imagens = db.query(models.PlantImage).filter(models.PlantImage.user_id == user_id).all()
+
+    # 🔹 Consulta imagens da planta separadas por cor
+        cores = ["Green", "Yellow", "Red"]
+        imagens_por_cor = {cor.lower(): [] for cor in cores}
+
+        for cor in cores:
+            imgs = db.query(models.PlantImage).filter(
+                models.PlantImage.plant_id == planta.id,
+                models.PlantImage.color == cor
+            ).all()
+            imagens_por_cor[cor.lower()] = [f"/uploads/{img.image_path}" for img in imgs]
+
+        return JSONResponse(content={
+            "especie": planta.name,
+            "familia": plant.species,
+            "descricao": planta.description,
+            "image": [f"/uploads/{img.image_path}" for img in imagens],
+        })
+      
+    return JSONResponse(content={
+            "especie": "Desconhecida",
+            "familia": "Desconhecida",
+            "descricao": "Não encontramos dados para essa planta.",
+            "image": None
+        })
 
 @router.post("/update", name="update_user")
 async def update_user(
@@ -353,7 +375,6 @@ def delete_account(request: Request,
     user = db.query(User).filter(User.id == user_id).first()
     
     if user and bcrypt.verify(senha, user.password):
-        db.query(userPlant).filter(userPlant.user_id == user_id).delete()
         db.delete(user)
         db.commit()
         request.session.clear()
@@ -376,7 +397,7 @@ async def analyze_with_gemini(file: UploadFile = File(...)):
         Se a imagem fornecida não for uma planta ou árvore, retorne isplant = false
         {
           "especie": "<Aqui irá a o nome da planta, TENTE COLOCAR O NOME MAIS SIMPLES POSSÍVEL, SEMPRE NO SINGULAR E CONTENDO APENAS 1 PALAVRA SE POSSÍVEL.>",
-          "familia": "<Aqui irá a família que a planta pertence, pode dar detalhes sobre e até mesmo dar alguns exemplos breves de outras plantas ou arvores da familia>",
+          "familia": "<Aqui irá a família que a planta pertence, pode dar detalhes sobre e até mesmo dar alguns exemplos breves de outras plantas ou arvores da familia, como dito antes, essa deve ser a parte mais completa junto com a condição da planta, pois preciso de uma descrição geral da família e espécie, então pode caprichar!>",
           "condicao_saude": <aqui irá a saúde da planta>,
           "colorAlert": <aqui você dará uma cor baseada na condição da planta, que vai de "Green", "Yellow" ou "Red", sendo vermelho a pior das situações, e verde a melhor delas. (APENAS RETORNE UMA DAS 3 CORES, NADA MAIS QUE ISSO)>
           "isplant": <true ou false>
@@ -407,9 +428,9 @@ async def analyze_with_gemini(file: UploadFile = File(...)):
     }
     return JSONResponse(content={"dados": data_json})
 
-
 @router.post("/rplant", name="rplant")
-async def register_plant(request: Request, 
+async def register_plant(
+    request: Request, 
     nome: str = Form(...),
     especie: str = Form(...),
     descricao: str = Form(...),
@@ -419,93 +440,107 @@ async def register_plant(request: Request,
 ):
     file_hash = None
     filename = None
+    user_id = request.session.get("user_id")
 
     if image:
         file_bytes = await image.read()
         file_hash = hashlib.sha256(file_bytes).hexdigest()
-        await image.seek(0) 
+        await image.seek(0)  # reseta o ponteiro para leitura futura
 
-    user_id = request.session.get("user_id")
+    # 🔹 Verifica se a planta já existe no banco global
+    existing_plant = db.query(models.Plant).filter(models.Plant.name == nome).first()
 
-    existing_plant = db.query(models.Plant).filter(
-        models.Plant.name == nome,
-    ).first()
-
+    # 🔹 Se a planta já existe (registro global)
     if existing_plant:
         existing_plant.count += 1
         db.commit()
         db.refresh(existing_plant)
-        new_userplanty = models.userPlant(
-                    plant_name=existing_plant.name,
-                    plant_id=existing_plant.id,
-                    user_id=user_id
-                )
-        db.add(new_userplanty)
-        db.commit()
-        db.refresh(new_userplanty)
+
+
         if file_hash:
-            duplicate = db.query(models.PlantImage).filter(
-                models.PlantImage.plant_id == existing_plant.id,
-                models.PlantImage.image_hash == file_hash,
-                models.PlantImage.color == cor
-            ).first()
+            filename = f"user_{user_id}_plant_{existing_plant.id}_{file_hash[:8]}.png"
+            file_path = os.path.join("app/uploads", filename)
+            with open(file_path, "wb") as buffer:
+                buffer.write(file_bytes)
 
-            if not duplicate:
-                filename = f"imagem_{existing_plant.id}_{file_hash[:8]}.png"
-                file_path = os.path.join("app/uploads", filename)
-                with open(file_path, "wb") as buffer:
-                    buffer.write(file_bytes)
-
-                new_image = models.PlantImage(
+            plant_image = models.PlantImage(
+                    user_id=user_id,
+                    name=nome,
                     image_path=filename,
                     image_hash=file_hash,
+                    description=descricao,
                     color = cor,
                     plant_id=existing_plant.id
-                )
-                db.add(new_image)
-                db.commit()
-                
-            return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
+            )
+            db.add(plant_image)
+            db.commit()
 
-        return {"message": f"Planta '{nome}' já existe, contador atualizado para {existing_plant.count}"}
+        return {"message": f"Planta '{nome}' já existe, contador atualizado e imagem salva!"}
 
-    
+    # 🔹 Se a planta NÃO existe, cria o registro global
     new_plant = models.Plant(
-        id= None,  
         name=nome,
         species=especie,
-        description=descricao,
-        color=cor,
         count=1
     )
-
     db.add(new_plant)
     db.commit()
     db.refresh(new_plant)
 
-    new_userplant = models.userPlant(
-        plant_name=new_plant.name,
-        plant_id=new_plant.id,
-        user_id=user_id
-    )
-    db.add(new_userplant)
-    db.commit()
-    db.refresh(new_userplant)
 
+    # ✅ Salva imagem enviada pelo usuário (histórico individual)
     if file_hash:
-        filename = f"imagem_{new_plant.id}_{file_hash[:8]}.png"
+        filename = f"user_{user_id}_plant_{new_plant.id}_{file_hash[:8]}.png"
         file_path = os.path.join("app/uploads", filename)
         with open(file_path, "wb") as buffer:
             buffer.write(file_bytes)
 
-        new_image = models.PlantImage(
-            image_path=filename,
-            image_hash=file_hash,
-            color = new_plant.color, 
-            plant_id=new_plant.id
-        )
-        db.add(new_image)
+        plant_image = models.PlantImage(
+                    user_id=user_id,
+                    name=new_plant.name,
+                    image_path=filename,
+                    image_hash=file_hash,
+                    description=descricao,
+                    color = cor,
+                    plant_id=new_plant.id
+            )
+        db.add(plant_image)
         db.commit()
 
+    return {"message": "Planta registrada com sucesso e imagem salva no histórico!", "plant_id": new_plant.id}
 
-    return {"message": "Planta registrada com sucesso!", "plant_id": new_plant.id}
+#Jardim
+
+
+@router.get("/plants", response_class=HTMLResponse, name="plants")
+def homepage(request: Request, db: Session = Depends(get_db)):
+    user_id = request.session.get("user_id")
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+
+    user_name = request.session.get("user_name")
+
+    user_email = request.session.get("user_email")
+
+    user_profile_image = db.query(User.profile_image).filter(User.email == user_email).first()
+
+    user_plants = db.query(PlantImage).filter(PlantImage.user_id == user_id).all()
+
+    image_urls = f"/profpic/{user_profile_image[0]}"
+
+    theme = user.theme if user and user.theme else "light"
+    if image_urls is None:
+        image_urls = f"/profpic/default.png"
+
+    if user_name:
+        return templates.TemplateResponse("plant.html", {
+            "request": request,
+            "user_name": user_name,
+            "profile_image": image_urls,
+            "theme": theme,
+            "plants": user_plants
+
+
+        })
+    
+    return RedirectResponse(url="/login", status_code=302)

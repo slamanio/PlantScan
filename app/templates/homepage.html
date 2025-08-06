@@ -9,7 +9,7 @@
   
 </head>
 <body class="{{ theme }}">
-  
+
 
  <button id="theme-toggle">🌙 Modo Escuro</button>
 </div>
@@ -18,6 +18,7 @@
   <div class="dropdown-menu" id="dropdownMenu">
     <button onclick="handleAction('update')">👤 Perfil</button>
     <button onclick="handleAction('logout')">🚪 Sair</button>
+    <button onclick="handleAction('plants')"> 🍃 Meu Jardim</button>
     
   </div>
 </div>
@@ -34,28 +35,8 @@
       </div>
       <input type="file" id="imageInput" accept="image/*" />
     </div>
-    
-<div class="plant-status-container">
-    <h3>🌱 Minhas Plantas</h3>
-    <ul id="plantStatusList">
-        {% for up in userplants_full %}
-    <li class="history-table">
-      {% for img in up.planty.images %}
-     
-      {% endfor %}
-        
-        
 
-        <div class="plant-images">
-            {% if up.planty.images %}
-            <span class="plant-icon"><img src="/uploads/{{ up.planty.images[0].image_path }}"></span>
-        {% endif %}
-        <strong>{{ up.plant_name }}</strong>
-    </li>
-{% endfor %}
 
-    </ul>
-</div>
 
 
 <div class="history-container right-history">
@@ -293,11 +274,15 @@ document.getElementById("imageInput").addEventListener("change", function () {
   }, 2000);
   
   appendMessage(message, "sent");
-  appendMessage("Certo! me farei o possível para te ajudar a identificar a planta ou árvore!", "received");
+  appendMessage("Certo! farei o possível para te ajudar a identificar a planta ou árvore!", "received");
 
   break;
   
-  
+  case "plants":
+  message = "Quero ver minhas plantas!";
+    window.location.href = "/" + action;
+
+      break;
   }
 
   
