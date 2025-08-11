@@ -235,7 +235,6 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
     if planta:
         # 🔹 Consulta imagens da planta
         imagens = db.query(models.PlantImage).filter(models.PlantImage.plant_id == planta.id).all()
-
     # 🔹 Consulta imagens da planta separadas por cor
         cores = ["Green", "Yellow", "Red"]
         imagens_por_cor = {cor.lower(): [] for cor in cores}
@@ -244,13 +243,12 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
             imgs = db.query(models.PlantImage).filter(
                 models.PlantImage.plant_id == planta.id,
                 models.PlantImage.color == cor
+                
             ).all()
             imagens_por_cor[cor.lower()] = [f"/uploads/{img.image_path}" for img in imgs]
-
         return JSONResponse(content={
             "especie": planta.name,
             "familia": planta.species,
-            "descricao": planta.description,
             "image": [f"/uploads/{img.image_path}" for img in imagens],
             "imagegreen": imagens_por_cor["green"],
             "imageyellow": imagens_por_cor["yellow"],
@@ -260,46 +258,46 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
     return JSONResponse(content={
             "especie": "Desconhecida",
             "familia": "Desconhecida",
-            "descricao": "Não encontramos dados para essa planta.",
             "image": None
         })
 
 @router.post("/userplant-info")
-async def planta_info(request: Request, db: Session = Depends(get_db)):
+async def userplant_info(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
-    nome = form.get("nome")
+    plant_id = form.get("plant_id")
     user_id = request.session.get("user_id")
-    plant = db.query(Plant).filter(Plant.name == nome).first()
-    planta = db.query(PlantImage).filter(Plant.name == nome).first()
 
-    if planta:
-        # 🔹 Consulta imagens da planta
-        imagens = db.query(models.PlantImage).filter(models.PlantImage.user_id == user_id).all()
+    if not plant_id:
+        return JSONResponse(status_code=400, content={"error": "plant_id não fornecido"})
 
-    # 🔹 Consulta imagens da planta separadas por cor
-        cores = ["Green", "Yellow", "Red"]
-        imagens_por_cor = {cor.lower(): [] for cor in cores}
+    imagens = (
+        db.query(models.PlantImage)
+        .filter(models.PlantImage.id == plant_id, models.PlantImage.user_id == user_id)
+        .all()
+    )
 
-        for cor in cores:
-            imgs = db.query(models.PlantImage).filter(
-                models.PlantImage.plant_id == planta.id,
-                models.PlantImage.color == cor
-            ).all()
-            imagens_por_cor[cor.lower()] = [f"/uploads/{img.image_path}" for img in imgs]
-
+    if not imagens:
         return JSONResponse(content={
-            "especie": planta.name,
-            "familia": plant.species,
-            "descricao": planta.description,
-            "image": [f"/uploads/{img.image_path}" for img in imagens],
-        })
-      
-    return JSONResponse(content={
             "especie": "Desconhecida",
             "familia": "Desconhecida",
             "descricao": "Não encontramos dados para essa planta.",
-            "image": None
+            "imagens": []
         })
+
+    return JSONResponse(content={
+        "especie": imagens[0].plant.name,
+        "imagens": [
+            {
+                "descricao": img.description,
+                "cor": img.color,
+                "path": f"/uploads/{img.image_path}"
+            }
+            for img in imagens
+        ]
+    })
+
+
+
 
 @router.post("/update", name="update_user")
 async def update_user(
@@ -511,36 +509,42 @@ async def register_plant(
 
 #Jardim
 
-
 @router.get("/plants", response_class=HTMLResponse, name="plants")
 def homepage(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
 
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=302)
+
     user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
 
     user_name = request.session.get("user_name")
-
     user_email = request.session.get("user_email")
 
-    user_profile_image = db.query(User.profile_image).filter(User.email == user_email).first()
+    user_profile_image = db.query(models.User.profile_image).filter(models.User.email == user_email).first()
 
-    user_plants = db.query(PlantImage).filter(PlantImage.user_id == user_id).all()
+    if user_profile_image is None:
+        image_urls = "/profpic/default.png"
+    else:
+        image_urls = f"/profpic/{user_profile_image}"
 
-    image_urls = f"/profpic/{user_profile_image[0]}"
+    # Buscar plantas do usuário com dados da planta via joinedload para facilitar template
+    user_plants = (
+        db.query(models.PlantImage)
+        .filter(models.PlantImage.user_id == user_id)
+        .options(joinedload(models.PlantImage.plant))  # Assuming PlantImage has 'plant' relationship
+        .all()
+    )
 
     theme = user.theme if user and user.theme else "light"
-    if image_urls is None:
-        image_urls = f"/profpic/default.png"
 
-    if user_name:
-        return templates.TemplateResponse("plant.html", {
-            "request": request,
-            "user_name": user_name,
-            "profile_image": image_urls,
-            "theme": theme,
-            "plants": user_plants
+    return templates.TemplateResponse("plant.html", {
+        "request": request,
+        "user_name": user_name,
+        "profile_image": image_urls,
+        "theme": theme,
+        "plants": user_plants
+    })
 
-
-        })
-    
-    return RedirectResponse(url="/login", status_code=302)

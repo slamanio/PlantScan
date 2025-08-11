@@ -394,7 +394,7 @@ function handlePlantClick(plantName) {
     return response.json();
   })
   .then(data => {
-    const { especie, familia, descricao, imagegreen, imageyellow, imagered } = data;
+    const { especie, familia, descricao, image, imagegreen, imageyellow, imagered } = data;
 
     const respostaHTML = `
       <div style="margin-bottom: 8px;">
@@ -402,9 +402,6 @@ function handlePlantClick(plantName) {
       </div>
       <div style="margin-bottom: 8px;">
         <span style="font-weight: bold; color: #00695c;">🌳 Família:</span><br><span>${familia}</span>
-      </div>
-      <div style="margin-bottom: 8px;">
-        <span style="font-weight: bold; color: #1e88e5;">❤️ Saúde:</span><br><span>${descricao}</span>
       </div>
     `;
 

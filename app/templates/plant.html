@@ -304,39 +304,103 @@ body.dark .plant-item {
   background-color: rgba(30, 40, 60, 0.8);
   color: #cce6ff;
 }
+.modal-plant-pic {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+  border: 3px solid #81c784; /* borda verde padrão */
+  background: #fff;
+}
+.modal-plant-pic .Green{
+  border: 3px solid #81c784;
+}
+.modal-plant-pic .Yellow {
+  
+  border: 3px solid #fbc02d; /* amarelo */
+ 
+}
+
+.modal-plant-pic .Red {
+  border: 3px solid #e53935; /* vermelho */
+}
 /* 📷 Imagem da planta no modal */
 #modal-plant-pic img {
-  max-width: 100%;
-  max-height: 250px;
-  border-radius: 12px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  margin-bottom: 20px;
-  transition: transform 0.3s ease;
+  display: block;
 }
 
 #modal-plant-pic img:hover {
-  transform: scale(1.02);
+  transform: scale(1.05);
+}
+#modal-plant-name {
+  font-weight: 700;
+  font-size: 32px;
+  margin-bottom: 25px;
+  text-align: center;
+  color: #e0f7fa;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
+/* Descrição da condição */
+#modal-health-condition {
+  max-width: 700px;
+  margin: 0 auto;
+  background: transparent;
+  color: #cce6ff;
+  font-weight: 500;
+  text-align: justify;
+  padding: 0;
+  box-shadow: none;
+}
+body.dark #modal-health-condition {
+  color: #a9d18e;
+  background-color: rgba(46, 125, 50, 0.2);
+  box-shadow: inset 0 3px 8px rgba(255, 255, 255, 0.15);
+}
 body.dark .plant-item:hover {
   background-color: rgba(50, 70, 100, 0.9);
 }
 /* 🌿 Modal container (ocupa a .container inteira) */
 .plant-modal {
-  position: fixed; /* ← use fixed para cobrir a tela inteira corretamente */
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(20, 20, 40, 0.9);
+  display: flex;
+  justify-content: flex-start; /* alinha conteúdo no topo e esquerda */
+  align-items: flex-start;
+  padding: 30px 40px;
+  box-sizing: border-box;
+  z-index: 9999;
+  overflow-y: auto;
+}
+.health-bar {
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
+  width: 10px;
   height: 100%;
-  background: rgba(255,255,255,0.95);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 30;
-  padding: 30px;
-  overflow-y: auto; /* ← permite rolagem vertical */
-  box-sizing: border-box;
+  border-radius: 8px 0 0 8px;
+  transition: background-color 0.3s ease;
+}
+
+/* Cores de saúde */
+.health-bar.Green {
+  background-color: #4caf50; /* verde */
+}
+.health-bar.Yellow {
+  background-color: #fbc02d; /* amarelo */
+}
+.health-bar.Red {
+  background-color: #e53935; /* vermelho */
 }
 
 
@@ -346,62 +410,97 @@ body.dark .plant-item:hover {
 
 /* 🌼 Modal conteúdo */
 .modal-content {
-  background-color: #f0fdf4;
-  padding: 30px 40px;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh; /* ← limita altura máxima */
-  overflow-y: auto;  /* ← ativa scroll interno se ultrapassar */
-  text-align: center;
   position: relative;
-  color: #1a3d2f;
-  scrollbar-width: thin;
-  scrollbar-color: #76c893 #e6f4ea;
+  background-color: #142c44;
+  color: #cce6ff;
+  padding: 40px 50px 40px 160px; /* espaçamento à esquerda para imagem */
+  border-radius: 20px;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+  box-sizing: border-box;
+  font-size: 18px;
+  line-height: 1.5;
+  overflow-y: auto;
 }
 
 
 /* ✖ Botão de fechar */
 .close-modal {
   position: absolute;
-  top: 10px;
-  right: 15px;
-  background: transparent;
+  top: 20px;
+  right: 20px;
+  background-color: #64b5f6;
   border: none;
-  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+  font-size: 28px;
   cursor: pointer;
-  color: #1a3d2f;
+  box-shadow: 0 4px 10px rgba(100, 181, 246, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  z-index: 10;
+}
+.close-modal:hover {
+  background-color: #42a5f5;
+  transform: scale(1.1);
+}
+.close-modal:active {
+  transform: scale(0.95);
+}
+@media (max-width: 700px) {
+  .modal-content {
+    padding: 30px 30px 30px 130px;
+    font-size: 16px;
+  }
+  #modal-plant-pic {
+    width: 80px;
+    height: 80px;
+    left: 30px;
+    top: 30px;
+  }
 }
 
 /* 🌙 Modo noturno */
 body.dark .plant-modal {
-  background: rgba(20, 20, 40, 0.95);
+   background: rgba(20, 20, 40, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 body.dark .modal-content {
-  background-color: #1e3a5f;
+  background-color: rgba(30, 58, 95, 0.85);
   color: #cce6ff;
   scrollbar-color: #5596d0 #1f2f44;
+  box-shadow: 0 15px 40px rgba(0, 50, 100, 0.4);
 }
 
 body.dark .close-modal {
-  color: #cce6ff;
+  background-color: #5596d0;
+  color: #fff;
+  box-shadow: 0 4px 8px rgba(85,150,208,0.6);
+}
+body.dark .close-modal:hover {
+  background-color: #397db6;
 }
 /* Scroll bonito para o modal */
 .modal-content::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .modal-content::-webkit-scrollbar-track {
-  background: #e6f4ea; /* cor da trilha */
+  background: #e6f4ea;
   border-radius: 10px;
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-  background-color: #76c893; /* cor do "thumb" (barra) */
+  background-color: #76c893;
   border-radius: 10px;
-  border: 2px solid #e6f4ea; /* espaço interno para parecer arredondado */
+  border: 2px solid #e6f4ea;
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
@@ -469,7 +568,7 @@ body.dark .modal-content::-webkit-scrollbar-thumb:hover {
     <p>Bem-vindo ao seu espaço tranquilo! 🌙🦋</p>
     <ul class="plant-list">
   {% for tp in plants %}
-    <li class="plant-item" onclick="handlePlantClick('{{ tp.name }}')">
+    <li class="plant-item" onclick="handlePlantClick('{{ tp.id }}')">
       <span class="plant-icon">🌿</span>
       <strong>{{ tp.name }}</strong>
     </li>
@@ -477,17 +576,24 @@ body.dark .modal-content::-webkit-scrollbar-thumb:hover {
 </ul>
 
   </div>
-  <div id="plant-modal" class="plant-modal hidden">
+  <div id="plant-modal" class="plant-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-plant-name">
+
+  <!-- Barra vertical de saúde (classe muda conforme condição) -->
+  <div id="health-bar" class="health-bar"></div>
+
   <div class="modal-content">
-    <button class="close-modal" onclick="closeModal()">✖</button>
-    <h2 id="modal-plant-pic">
-  <img src="" alt="Imagem da planta">
-</h2>
+    <button class="close-modal" onclick="closeModal()" aria-label="Fechar modal">×</button>
     <h2 id="modal-plant-name">Nome da Planta</h2>
 
-    <p><strong>Condição:</strong> <span id="modal-last-watered">...</span></p>
+    <div id="modal-plant-pic">
+      <img src="" alt="Imagem da planta">
+    </div>
+
+    <p id="modal-health-condition">Descrição da condição da planta aqui...</p>
   </div>
 </div>
+
+
 
  <button class="back-btn" onclick="window.location.href='{{ url_for('home') }}'">
   <i class="fas fa-arrow-left"></i> Voltar
@@ -506,10 +612,12 @@ document.getElementById("plant-modal").addEventListener("click", function(event)
   }
 });
 
-function handlePlantClick(name) {
+function handlePlantClick(plantId) {
+  console.log("[handlePlantClick] Iniciando busca para planta ID:", plantId);
 
   const formData = new FormData();
-  formData.append("nome", name);
+  formData.append("plant_id", plantId);
+
   fetch("/userplant-info", {
     method: "POST",
     body: formData
@@ -519,17 +627,59 @@ function handlePlantClick(name) {
     return response.json();
   })
   .then(data => {
-    const { especie, familia, descricao, image} = data;
+    // Atualiza nome e família no modal
+    const nomeElem = document.getElementById("modal-plant-name");
+    if (nomeElem) nomeElem.textContent = data.especie || "Desconhecida";
 
-  document.getElementById("modal-plant-name").textContent = name;
-  document.getElementById("modal-last-watered").textContent = descricao || "Data desconhecida.";
+    // Atualiza imagens
+    const container = document.getElementById("modal-plant-pic");
+    container.className = "modal-plant-pic " + (data.imagens[0].cor);
+    if (!container) {
+      console.warn("[handlePlantClick] modal-plant-pic não encontrado");
+      return;
+    }
+    container.innerHTML = "";
+    
 
- const imgElement = document.querySelector("#modal-plant-pic img");
-  imgElement.src = image; // ou imageyellow / imagered dependendo da lógica
+    if (data.imagens && data.imagens.length > 0) {
+  // Atualize a descrição geral (se quiser) com a primeira imagem ou alguma info geral
+  const geralDesc = document.getElementById("modal-health-condition");
+  if (geralDesc) {
+    geralDesc.textContent = `Condição: ${data.imagens[0].cor || "Cor desconhecida"} - ${data.imagens[0].descricao || "Sem descrição"}`;
+    const healthBar = document.getElementById("health-bar");
+    healthBar.className = "health-bar " + (data.imagens[0].cor);
+  }
 
-  // Mostra o modal
-  document.getElementById("plant-modal").classList.remove("hidden");
-});}
+  data.imagens.forEach(img => {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("plant-image-item");
+
+    const imgElem = document.createElement("img");
+    imgElem.src = img.path;
+    imgElem.alt = img.descricao || "Imagem da planta";
+
+    // Cria descrição individual para cada imagem
+
+    wrapper.appendChild(imgElem);
+
+
+    container.appendChild(wrapper);
+  });
+} else {
+  container.innerHTML = "<p>Nenhuma imagem disponível.</p>";
+}
+
+
+    // Exibe o modal
+    const modal = document.getElementById("plant-modal");
+    if (modal) modal.classList.remove("hidden");
+  })
+  .catch(err => {
+    console.error("[handlePlantClick] Erro:", err);
+  });
+}
+
+
 
 function closeModal() {
   document.getElementById("plant-modal").classList.add("hidden");
