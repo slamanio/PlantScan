@@ -548,3 +548,60 @@ def homepage(request: Request, db: Session = Depends(get_db)):
         "plants": user_plants
     })
 
+
+@router.post("/update_plant_image")
+async def update_plant_image(
+    request: Request, 
+    db: Session = Depends(get_db),
+    nova_imagem: UploadFile = File(...),
+):
+    form = await request.form()
+    plant_id = form.get("plant_id")
+    user_id = request.session.get("user_id")
+
+    imagem_db = (
+        db.query(models.PlantImage)
+        .filter(models.PlantImage.id == plant_id, models.PlantImage.user_id == user_id)
+        .first()
+    )
+    if not imagem_db:
+        return JSONResponse(status_code=404, content={"error": "Imagem anterior não encontrada"})
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    caminho_imagem_anterior = os.path.join(BASE_DIR, "uploads", imagem_db.image_path.lstrip("/"))
+
+    image_bytes = await nova_imagem.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    with open(caminho_imagem_anterior, "rb") as f:
+        img = Image.open(f).convert("RGB")
+
+    model = genai.GenerativeModel("gemini-2.5-flash")
+    response = model.generate_content(
+        [
+            image, img,
+            """
+            Aqui estão duas imagens, quero que me diga se conseguiu ler ambas, apenas retorne um json:
+
+            {
+              "icanread": <true ou false>
+            }
+            """
+        ],
+        stream=False
+    )
+        
+    text_response = response.text
+    match = re.search(r"\{[\s\S]*\}", text_response)
+    if match:
+        try:
+            data_json = json.loads(match.group())
+        except json.JSONDecodeError:
+            data_json = {"icanread": False}
+    else:
+        data_json = {"icanread": False}
+
+    # Retorna sempre o JSON com os dados
+    return JSONResponse(content={"dados": data_json})
+
+
+

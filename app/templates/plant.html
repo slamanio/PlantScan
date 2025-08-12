@@ -3,533 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌞🌙 Jardim com Nascer & Pôr do Sol</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(to top, #b3f0ff 0%, #d6f5ff 40%, #ffffff 100%);
-  height: 100vh;
-  transition: background 3s ease;
-  
-}
-.container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%;
-  max-width: 700px;
-  background-color: rgba(255, 255, 255, 0.9);
-  color: #1a3d2f;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  text-align: center;
-  z-index: 20;
-  font-size: 18px;
-  transition: background-color 1s ease, color 1s ease;
-}
-body.dark .container {
-  background-color: rgba(20, 20, 40, 0.8);
-  color: #cce6ff;
-}
-
-    .container h1 {
-      font-size: 32px;
-      margin-bottom: 20px;
-    }
-
-    .container p {
-      font-size: 18px;
-    }
-/* ☀️ Sol */
-.sun {
-  position: absolute;
-  top: 80px;
-  left: 10%;
-  width: 100px;
-  height: 100px;
-  background: yellow;
-  border-radius: 50%;
-  box-shadow: 0 0 50px rgba(255, 255, 0, 0.7);
-  transition: all 3s ease;
-  z-index: 5;
-}
-
-/* 🌙 Lua */
-.moon {
-  position: absolute;
-  top: 200px;
-  right: -100px;
-  width: 80px;
-  height: 80px;
-  background: #f0f0f0;
-  border-radius: 50%;
-  box-shadow: 0 0 40px rgba(200, 200, 255, 0.6);
-  opacity: 0;
-  transition: all 3s ease;
-  z-index: 5;
-}
-
-/* ☁️ Nuvens */
-.cloud {
-  position: absolute;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 30px 10px #fff, 60px 15px #fff, 90px 5px #fff;
-  width: 100px;
-  height: 50px;
-  animation: cloudMove 60s linear infinite;
-  opacity: 0.8;
-}
-.cloud:nth-child(3) { top: 80px; left: -200px; animation-duration: 80s; transform: scale(1.2); }
-.cloud:nth-child(4) { top: 150px; left: -300px; animation-duration: 100s; transform: scale(1.5); }
-@keyframes cloudMove {
-  from { left: -200px; }
-  to { left: 120%; }
-}
-
-/* 🌱 Grama */
-.grass {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 200px;
-  background: #2e8b57;
-  box-shadow: inset 0 50px 50px rgba(0,0,0,0.2);
-  transition: background 3s ease;
-}
-
-/* 🌸 Flores */
-.flower {
-  position: absolute;
-  bottom: 200px;
-  width: 20px;
-  height: 60px;
-  background: #228b22;
-  border-radius: 5px;
-  transition: background 3s ease;
-}
-.flower::before {
-  content: "🌸";
-  font-size: 25px;
-  position: absolute;
-  top: -20px;
-  left: -5px;
-}
-.flower:nth-child(5) { left: 100px; }
-.flower:nth-child(6) { left: 140px; }
-.flower:nth-child(7) { left: 180px; }
-.flower:nth-child(8) { left: 600px; }
-.flower:nth-child(9) { left: 650px; }
-.flower:nth-child(10) { left: 700px; }
-
-/* 🦋 Borboletas */
-.butterfly {
-  position: absolute;
-  top: 50%;
-  font-size: 30px;
-  animation: fly 15s linear infinite;
-}
-.butterfly:nth-child(11) { left: -50px; animation-delay: 0s; }
-.butterfly:nth-child(12) { left: -100px; top: 30%; animation-delay: 5s; animation-duration: 20s; }
-@keyframes fly {
-  0% { transform: translateX(0) translateY(0) rotate(10deg); }
-  25% { transform: translateX(30vw) translateY(-50px) rotate(-10deg); }
-  50% { transform: translateX(60vw) translateY(30px) rotate(10deg); }
-  75% { transform: translateX(90vw) translateY(-20px) rotate(-10deg); }
-  100% { transform: translateX(120vw) translateY(0) rotate(10deg); }
-}
-
-/* 🌟 Estrelas */
-.star {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: white;
-  border-radius: 50%;
-  animation: twinkle 3s infinite alternate;
-  opacity: 0;
-  transition: opacity 2s ease;
-}
-@keyframes twinkle {
-  0% { opacity: 0; }
-  50% { opacity: 1; }
-  100% { opacity: 0.3; }
-}
-
-/* 🌿 Painel com título */
-.title {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255,255,255,0.8);
-  padding: 15px 30px;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  font-size: 2em;
-  color: #276749;
-  z-index: 10;
-  transition: background 1s ease, color 1s ease;
-}
-
-/* ===== MODO NOTURNO ===== */
-body.dark {
-  background: linear-gradient(to top, #0b1a2a 0%, #142c44 40%, #1e3a5f 100%);
-}
-body.dark .grass { background: #0f3d1f; }
-body.dark .flower { background: #14532d; }
-body.dark .cloud { opacity: 0.3; }
-body.dark .title { background: rgba(20,20,40,0.7); color: #cce6ff; }
-body.dark .star { opacity: 1; }
-
-/* 🌅 Animação do Sol e da Lua */
-.sun.sunset { left: 70%; top: 300px; opacity: 0; transform: scale(0.6); }
-.sun.sunrise { left: 10%; top: 80px; opacity: 1; transform: scale(1); }
-.moon.moonrise { opacity: 1; right: 20%; top: 100px; }
-.moon.moonset { opacity: 0; right: -100px; top: 200px; }
-
-#theme-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;         /* ✅ Agora no lado direito */
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;  /* ✅ Botão redondo */
-  border: none;
-  background: #3a3f5c; /* ☀️ cor de sol */
-  color: #333;
-  font-size: 22px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  transition: background 0.5s ease, transform 0.3s ease;
-  z-index: 1000;
-}
-#theme-toggle:hover {
-  transform: scale(1.1);
-}
-
-/* 🌙 Estilo quando estiver no modo noturno */
-body.dark #theme-toggle {
-  background: #ffeb3b; /* cor escura */
-  color: #fff;
-}
-.back-btn {
-  position: fixed;
-  top: 20px;
-  left: 20px;  
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background-color: rgba(144, 238, 144, 0.8); /* verde claro translúcido */
-  border: none;
-  color: #004d00; /* verde escuro */
-  padding: 8px 14px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 20px;
-  cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0, 77, 0, 0.4);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.15s ease;
-  user-select: none;
-  z-index: 10000; /* para garantir que fique acima de tudo */
-}
-
-.back-btn i {
-  font-size: 18px;
-  line-height: 1;
-}
-
-/* Hover */
-.back-btn:hover {
-  background-color: rgba(144, 238, 144, 1);
-  box-shadow: 0 5px 14px rgba(0, 77, 0, 0.6);
-  transform: translateY(-2px);
-}
-
-/* Clique */
-.back-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(0, 77, 0, 0.5);
-}
-
-/* Foco */
-.back-btn:focus {
-  outline: 2px solid #8fbc8f;
-  outline-offset: 2px;
-}
-.plant-list {
-  list-style: none;
-  padding: 0;
-  margin: 20px 0 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-}
-
-.plant-item {
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 12px 20px;
-  border-radius: 15px;
-  width: 80%;
-  max-width: 400px;
-  text-align: left;
-  font-size: 18px;
-  color: #1a3d2f;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.plant-item:hover {
-  background-color: #d6f5e3;
-  transform: translateY(-2px);
-}
-
-.plant-icon {
-  font-size: 22px;
-}
-
-/* 🌙 Modo escuro */
-body.dark .plant-item {
-  background-color: rgba(30, 40, 60, 0.8);
-  color: #cce6ff;
-}
-.modal-plant-pic {
-  position: absolute;
-  top: 40px;
-  left: 40px;
-  width: 100px;
-  height: 100px;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-  border: 3px solid #81c784; /* borda verde padrão */
-  background: #fff;
-}
-.modal-plant-pic .Green{
-  border: 3px solid #81c784;
-}
-.modal-plant-pic .Yellow {
-  
-  border: 3px solid #fbc02d; /* amarelo */
- 
-}
-
-.modal-plant-pic .Red {
-  border: 3px solid #e53935; /* vermelho */
-}
-/* 📷 Imagem da planta no modal */
-#modal-plant-pic img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-#modal-plant-pic img:hover {
-  transform: scale(1.05);
-}
-#modal-plant-name {
-  font-weight: 700;
-  font-size: 32px;
-  margin-bottom: 25px;
-  text-align: center;
-  color: #e0f7fa;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-}
-
-/* Descrição da condição */
-#modal-health-condition {
-  max-width: 700px;
-  margin: 0 auto;
-  background: transparent;
-  color: #cce6ff;
-  font-weight: 500;
-  text-align: justify;
-  padding: 0;
-  box-shadow: none;
-}
-body.dark #modal-health-condition {
-  color: #a9d18e;
-  background-color: rgba(46, 125, 50, 0.2);
-  box-shadow: inset 0 3px 8px rgba(255, 255, 255, 0.15);
-}
-body.dark .plant-item:hover {
-  background-color: rgba(50, 70, 100, 0.9);
-}
-/* 🌿 Modal container (ocupa a .container inteira) */
-.plant-modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(20, 20, 40, 0.9);
-  display: flex;
-  justify-content: flex-start; /* alinha conteúdo no topo e esquerda */
-  align-items: flex-start;
-  padding: 30px 40px;
-  box-sizing: border-box;
-  z-index: 9999;
-  overflow-y: auto;
-}
-.health-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 10px;
-  height: 100%;
-  border-radius: 8px 0 0 8px;
-  transition: background-color 0.3s ease;
-}
-
-/* Cores de saúde */
-.health-bar.Green {
-  background-color: #4caf50; /* verde */
-}
-.health-bar.Yellow {
-  background-color: #fbc02d; /* amarelo */
-}
-.health-bar.Red {
-  background-color: #e53935; /* vermelho */
-}
-
-
-.plant-modal.hidden {
-  display: none;
-}
-
-/* 🌼 Modal conteúdo */
-.modal-content {
-  position: relative;
-  background-color: #142c44;
-  color: #cce6ff;
-  padding: 40px 50px 40px 160px; /* espaçamento à esquerda para imagem */
-  border-radius: 20px;
-  max-width: 900px;
-  width: 100%;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-  box-sizing: border-box;
-  font-size: 18px;
-  line-height: 1.5;
-  overflow-y: auto;
-}
-
-
-/* ✖ Botão de fechar */
-.close-modal {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: #64b5f6;
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: white;
-  font-size: 28px;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(100, 181, 246, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  z-index: 10;
-}
-.close-modal:hover {
-  background-color: #42a5f5;
-  transform: scale(1.1);
-}
-.close-modal:active {
-  transform: scale(0.95);
-}
-@media (max-width: 700px) {
-  .modal-content {
-    padding: 30px 30px 30px 130px;
-    font-size: 16px;
-  }
-  #modal-plant-pic {
-    width: 80px;
-    height: 80px;
-    left: 30px;
-    top: 30px;
-  }
-}
-
-/* 🌙 Modo noturno */
-body.dark .plant-modal {
-   background: rgba(20, 20, 40, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-body.dark .modal-content {
-  background-color: rgba(30, 58, 95, 0.85);
-  color: #cce6ff;
-  scrollbar-color: #5596d0 #1f2f44;
-  box-shadow: 0 15px 40px rgba(0, 50, 100, 0.4);
-}
-
-body.dark .close-modal {
-  background-color: #5596d0;
-  color: #fff;
-  box-shadow: 0 4px 8px rgba(85,150,208,0.6);
-}
-body.dark .close-modal:hover {
-  background-color: #397db6;
-}
-/* Scroll bonito para o modal */
-.modal-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-content::-webkit-scrollbar-track {
-  background: #e6f4ea;
-  border-radius: 10px;
-}
-
-.modal-content::-webkit-scrollbar-thumb {
-  background-color: #76c893;
-  border-radius: 10px;
-  border: 2px solid #e6f4ea;
-}
-
-.modal-content::-webkit-scrollbar-thumb:hover {
-  background-color: #5db37f;
-}
-
-/* Scroll modo escuro */
-body.dark .modal-content::-webkit-scrollbar-track {
-  background: #1f2f44;
-}
-
-body.dark .modal-content::-webkit-scrollbar-thumb {
-  background-color: #5596d0;
-  border: 2px solid #1f2f44;
-}
-
-body.dark .modal-content::-webkit-scrollbar-thumb:hover {
-  background-color: #397db6;
-}
-
-
-</style>
+<link rel="stylesheet" href="/static/css/garden.css">
+<link rel="shortcut icon" href="/static/assets/imgs/chip.png">
+<title>PlantScan - Jardim </title>
 </head>
 <body class="{{ theme }}">
 
 <button id="theme-toggle">🌙</button>
 
 
-<!-- 🌟 Estrelas -->
+
 <div class="star" style="top:20px;left:30%;animation-delay:1s"></div>
 <div class="star" style="top:60px;left:50%;animation-delay:2s"></div>
 <div class="star" style="top:100px;left:70%;animation-delay:3s"></div>
@@ -582,15 +65,36 @@ body.dark .modal-content::-webkit-scrollbar-thumb:hover {
   <div id="health-bar" class="health-bar"></div>
 
   <div class="modal-content">
-    <button class="close-modal" onclick="closeModal()" aria-label="Fechar modal">×</button>
-    <h2 id="modal-plant-name">Nome da Planta</h2>
+  <button class="close-modal" onclick="closeModal()" aria-label="Fechar modal">×</button>
 
-    <div id="modal-plant-pic">
-      <img src="" alt="Imagem da planta">
-    </div>
+  <input type="file" id="plant-image-input" accept="image/*" style="display:none" />
 
-    <p id="modal-health-condition">Descrição da condição da planta aqui...</p>
+<!-- Botão visível -->
+<button class="update-btn" id="update-btn">
+  Atualizar
+</button>
+
+
+  <h2 id="modal-plant-name">Nome da Planta</h2>
+
+  <div id="modal-plant-pic" class="Green">
+    <img src="" alt="Imagem da planta">
   </div>
+
+  <p id="modal-health-condition">Descrição da condição da planta aqui...</p>
+
+  <div class="chat-box">
+    <div id="chat-messages">
+      <!-- Mensagens vão aparecer aqui -->
+    </div>
+    <div class="chat-input">
+      <input type="text" id="chat-message-input" placeholder="Digite sua mensagem...">
+      <button onclick="sendChatMessage()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+
 </div>
 
 
@@ -604,6 +108,25 @@ body.dark .modal-content::-webkit-scrollbar-thumb:hover {
 const btn = document.getElementById("theme-toggle");
 const sun = document.querySelector(".sun");
 const moon = document.querySelector(".moon");
+const updateBtn = document.getElementById('update-btn');
+const fileInput = document.getElementById('plant-image-input');
+let imagemAnterior = null;
+let plantid = null;
+
+ function getPlantId(id) {
+    plantid = id;
+  }
+  // Ao clicar no botão, abre o seletor de arquivo
+  updateBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // Quando o usuário escolher arquivo, chama atualizarPlanta()
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      atualizarPlanta(fileInput.files[0]);
+    }
+  });
 
 document.getElementById("plant-modal").addEventListener("click", function(event) {
   const modalContent = document.querySelector(".modal-content");
@@ -612,9 +135,38 @@ document.getElementById("plant-modal").addEventListener("click", function(event)
   }
 });
 
+async function atualizarPlanta(novaImagemFile, plantId) {
+  console.log("[handlePlantClick] Iniciando busca para planta ID:", plantid);
+  try {
+    const formData = new FormData();
+
+    formData.append('nova_imagem', novaImagemFile);
+    formData.append("plant_id", plantid);
+
+    console.log(novaImagemFile);
+    console.log(plantid);
+
+    const response = await fetch(`${window.location.origin}/update_plant_image`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao atualizar planta');
+    }
+
+    const data = await response.json();
+
+    console.log(data)
+  } catch (err) {
+    console.error('Erro:', err);
+  }
+}
+
+
 function handlePlantClick(plantId) {
   console.log("[handlePlantClick] Iniciando busca para planta ID:", plantId);
-
+  getPlantId(plantId);
   const formData = new FormData();
   formData.append("plant_id", plantId);
 
@@ -630,7 +182,7 @@ function handlePlantClick(plantId) {
     // Atualiza nome e família no modal
     const nomeElem = document.getElementById("modal-plant-name");
     if (nomeElem) nomeElem.textContent = data.especie || "Desconhecida";
-
+    
     // Atualiza imagens
     const container = document.getElementById("modal-plant-pic");
     container.className = "modal-plant-pic " + (data.imagens[0].cor);
@@ -642,13 +194,15 @@ function handlePlantClick(plantId) {
     
 
     if (data.imagens && data.imagens.length > 0) {
+      
   // Atualize a descrição geral (se quiser) com a primeira imagem ou alguma info geral
   const geralDesc = document.getElementById("modal-health-condition");
-  if (geralDesc) {
-    geralDesc.textContent = `Condição: ${data.imagens[0].cor || "Cor desconhecida"} - ${data.imagens[0].descricao || "Sem descrição"}`;
-    const healthBar = document.getElementById("health-bar");
-    healthBar.className = "health-bar " + (data.imagens[0].cor);
-  }
+if (geralDesc) {
+  const texto = `Condição: ${data.imagens[0].cor || "Cor desconhecida"} - ${data.imagens[0].descricao || "Sem descrição"}`;
+  setHealthConditionText(texto);
+}
+
+
 
   data.imagens.forEach(img => {
     const wrapper = document.createElement("div");
@@ -656,6 +210,7 @@ function handlePlantClick(plantId) {
 
     const imgElem = document.createElement("img");
     imgElem.src = img.path;
+    
     imgElem.alt = img.descricao || "Imagem da planta";
 
     // Cria descrição individual para cada imagem
@@ -733,6 +288,64 @@ btn.addEventListener("click", () => {
         body: JSON.stringify({ theme: isNight ? "dark" : "light" })
     });
 });
+function sendChatMessage() {
+  const input = document.getElementById("chat-message-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  // Adiciona mensagem do usuário
+  addMessage(message, "user");
+
+  // Limpa input
+  input.value = "";
+
+  // Simula resposta automática
+  setTimeout(() => {
+    addMessage("Entendido! Vou verificar sobre essa planta.", "bot");
+  }, 800);
+}
+
+function addMessage(text, sender) {
+  const messagesContainer = document.getElementById("chat-messages");
+  const msg = document.createElement("div");
+  msg.classList.add("chat-message", sender);
+  msg.textContent = text;
+  messagesContainer.appendChild(msg);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+function setHealthConditionText(fullText) {
+  const container = document.getElementById("modal-health-condition");
+  const maxLength = 300;
+
+  if (fullText.length <= maxLength) {
+    container.textContent = fullText;
+    return; // texto curto, só mostra normal
+  }
+
+  const shortText = fullText.slice(0, maxLength) + "...";
+
+  container.textContent = shortText;
+
+  const moreLink = document.createElement("span");
+  moreLink.textContent = "Mais";
+  moreLink.classList.add("more-link");
+
+  moreLink.onclick = () => {
+    const expanded = container.classList.toggle("expanded");
+    if (expanded) {
+      container.textContent = fullText;
+      moreLink.textContent = "Menos";
+      container.appendChild(moreLink);
+    } else {
+      container.textContent = shortText;
+      moreLink.textContent = "Mais";
+      container.appendChild(moreLink);
+    }
+  };
+
+  container.appendChild(moreLink);
+}
+
 </script>
 
 </body>
