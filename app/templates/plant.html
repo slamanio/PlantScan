@@ -78,7 +78,17 @@
   <h2 id="modal-plant-name">Nome da Planta</h2>
 
   <div id="modal-plant-pic" class="Green">
-    <img src="" alt="Imagem da planta">
+    <div id="plant-carousel">
+    <img id="plant-image" src="" alt="Imagem da planta" style="width:300px; border-radius:8px;">
+    <div id="plant-description" style="margin-top:10px;"></div>
+    <div id="plant-color-bar" style="height:5px; margin-top:5px;"></div>
+
+    <div style="margin-top:10px;">
+        <button onclick="prevImage()">⬅ Anterior</button>
+        <button onclick="nextImage()">Próxima ➡</button>
+    </div>
+</div>
+
   </div>
 
   <p id="modal-health-condition">Descrição da condição da planta aqui...</p>
@@ -99,6 +109,7 @@
 
 
 
+
  <button class="back-btn" onclick="window.location.href='{{ url_for('home') }}'">
   <i class="fas fa-arrow-left"></i> Voltar
 </button>
@@ -112,6 +123,35 @@ const updateBtn = document.getElementById('update-btn');
 const fileInput = document.getElementById('plant-image-input');
 let imagemAnterior = null;
 let plantid = null;
+let plantImages = [];  // Recebe do backend [{url, description, color}, ...]
+let currentIndex = 0;
+
+function loadCarousel(images) {
+    plantImages = images;
+    currentIndex = 0;
+    updateCarousel();
+}
+
+function updateCarousel() {
+    const img = plantImages[currentIndex];
+    if (!img) return;
+
+    document.getElementById("plant-image").src = img.url;
+    document.getElementById("plant-description").innerText = img.description || "Sem descrição";
+    document.getElementById("plant-color-bar").style.backgroundColor = img.color || "transparent";
+}
+
+function nextImage() {
+    if (plantImages.length === 0) return;
+    currentIndex = (currentIndex + 1) % plantImages.length;
+    updateCarousel();
+}
+
+function prevImage() {
+    if (plantImages.length === 0) return;
+    currentIndex = (currentIndex - 1 + plantImages.length) % plantImages.length;
+    updateCarousel();
+}
 
  function getPlantId(id) {
     plantid = id;
@@ -135,16 +175,12 @@ document.getElementById("plant-modal").addEventListener("click", function(event)
   }
 });
 
-async function atualizarPlanta(novaImagemFile, plantId) {
-  console.log("[handlePlantClick] Iniciando busca para planta ID:", plantid);
+async function atualizarPlanta(novaImagemFile) {
+  console.log("[handlePlantClick] Iniciando atualização para planta ID:", plantid);
   try {
     const formData = new FormData();
-
     formData.append('nova_imagem', novaImagemFile);
     formData.append("plant_id", plantid);
-
-    console.log(novaImagemFile);
-    console.log(plantid);
 
     const response = await fetch(`${window.location.origin}/update_plant_image`, {
       method: 'POST',
@@ -156,13 +192,51 @@ async function atualizarPlanta(novaImagemFile, plantId) {
     }
 
     const data = await response.json();
+    console.log("Resposta do servidor:", data);
+    if (data.isplant == false){
+      console.log("A imagem fornecida não é uma planta.")
+      console.log(data.isplant)
+    }
+    else{
+      registrarstatusdaplanta(data)
+    }
 
-    console.log(data)
+    // 1️⃣ Atualiza a descrição da planta no modal
+      
+
   } catch (err) {
     console.error('Erro:', err);
   }
 }
 
+
+async function registrarstatusdaplanta(data){
+ console.log("[handlePlantClick] Iniciando atualização para planta ID:", plantid);
+  try {
+    const formData = new FormData();
+    formData.append('condition', data.condition);
+    formData.append("plant_id", plantid);
+    formData.append("image_url", novaImagemFile);
+    formData.append("solution", data.solution);
+    formData.append("color", data.color);
+
+    const response = await fetch(`${window.location.origin}/register_new_plant_image`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao registrar planta');
+    }
+
+    const data = await response.json();
+    console.log("Resposta do servidor:", data);
+
+
+  } catch (err) {
+    console.error('Erro:', err);
+  }
+}
 
 function handlePlantClick(plantId) {
   console.log("[handlePlantClick] Iniciando busca para planta ID:", plantId);

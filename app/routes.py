@@ -581,12 +581,13 @@ async def update_plant_image(
     form = await request.form()
     plant_id = form.get("plant_id")
     user_id = request.session.get("user_id")
-
+    
     imagem_db = (
         db.query(models.PlantImage)
         .filter(models.PlantImage.id == plant_id, models.PlantImage.user_id == user_id)
         .first()
     )
+    
     if not imagem_db:
         return JSONResponse(status_code=404, content={"error": "Imagem anterior não encontrada"})
 
@@ -594,37 +595,94 @@ async def update_plant_image(
     caminho_imagem_anterior = os.path.join(BASE_DIR, "uploads", imagem_db.image_path.lstrip("/"))
 
     image_bytes = await nova_imagem.read()
+    file_hash = None
+    filename = None
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    file_hash = hashlib.sha256(image_bytes).hexdigest()
     with open(caminho_imagem_anterior, "rb") as f:
         img = Image.open(f).convert("RGB")
-
+    description = imagem_db.description
+    
     model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content(
         [
-            image, img,
+            image, img, description,
             """
-            Aqui estão duas imagens, quero que me diga se conseguiu ler ambas, apenas retorne um json:
+            Aqui estão duas imagens da EXATA MESMA PLANTA, e o "description" é nada mais que a descrição da imagem que já existe no banco, sendo a variável "img",
+            o que eu preciso de você é basicamente que tu me compare as duas imagens, já que será algo contínuo, onde a imagem que você receberá, será o mesmo fruto da primeira imagem posterior,
+            e dê um feedback do que evoluiu ou piorou de uma imagem para outra,
+            junto com isso, retorne uma solução se possível, para que possa ajudar a planta. Retorne também o status da planta, que vai das cores:
+            Green, Yellow, Red.
+            Se a imagem fornecida não for uma planta ou árvore, retorne apenas o json isplant = false, sem o resto.
 
             {
-              "icanread": <true ou false>
+              "condition": <aqui retorna o que mudou na planta>,
+              "solution": <aqui vai a solução, pode dar algo bem detalhado e que realmente ajude!>,
+              "color": <aqui o status da planta>,
+              "isplant": <true ou false>
+            },
+            {
+                "isplant": <true ou false>
             }
             """
         ],
         stream=False
     )
-        
+    
     text_response = response.text
     match = re.search(r"\{[\s\S]*\}", text_response)
     if match:
         try:
             data_json = json.loads(match.group())
         except json.JSONDecodeError:
-            data_json = {"icanread": False}
+            data_json = {"condition": None, "color": None,"isplant": False}
     else:
-        data_json = {"icanread": False}
+        data_json = {"condition": None, "color": None,"isplant": False}
 
-    # Retorna sempre o JSON com os dados
-    return JSONResponse(content={"dados": data_json})
+    return JSONResponse(content=data_json)  # sem "dados" aninhado
+
+@router.post("/register_new_plant_image")
+async def register_new_plant_image(
+    request: Request, 
+    condition: str = Form(...),
+    image_url: UploadFile = File(None),
+    color: str = Form(...),
+    solution: str = Form(...),
+    plant_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    file_hash = None
+    filename = None
+    user_id = request.session.get("user_id")
 
 
+    if image_url:
+        file_bytes = await image_url.read()
+        file_hash = hashlib.sha256(file_bytes).hexdigest()
+        await image_url.seek(0)  # reseta o ponteiro para leitura futura
+    if file_hash:
+        filename = f"user_{user_id}_plant_{plant_id}_{file_hash[:8]}.png"
+        file_path = os.path.join("app/uploads", filename)
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_bytes)
+
+    new_plant = models.PlantInfos(
+        condition= condition,
+        solution=solution,
+        color=color,
+        plant_image=file_path
+    )
+
+    
+    db.add(new_plant)
+    db.commit()
+    db.refresh(new_plant)
+
+
+    
+
+
+
+    return {"message": "Planta registrada com sucesso e imagem salva no histórico!", "plant_id": new_plant.id}
 
