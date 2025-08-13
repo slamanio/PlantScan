@@ -188,6 +188,29 @@ def homepage(request: Request, db: Session = Depends(get_db)):
     
     return RedirectResponse(url="/login", status_code=302)
 
+@router.get("/api/homepage", response_class=JSONResponse)
+def homepage_api(request: Request, db: Session = Depends(get_db)):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return JSONResponse(status_code=401, content={"error": "Não autenticado"})
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return JSONResponse(status_code=404, content={"error": "Usuário não encontrado"})
+
+    top_plants = db.query(models.Plant)\
+    .order_by(models.Plant.count.desc())\
+    .limit(3)\
+    .all()
+
+    return {
+        "user_name": user.full_name,
+        "profile_image": user.profile_image or "default.png",
+        "theme": user.theme or "light",
+        "top_plants": top_plants,
+
+    }
+
 @router.get("/logout", name="logout")
 def logout(request: Request):
     request.session.clear()
