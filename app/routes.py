@@ -9,7 +9,7 @@ import google.generativeai as genai
 import io
 import shutil, os
 import hashlib
-from .models import User, Plant, PlantImage
+from .models import User, Plant, PlantImage, PlantInfos
 from sqlalchemy.orm import joinedload
 from . import models, database
 from passlib.hash import bcrypt
@@ -293,30 +293,57 @@ async def userplant_info(request: Request, db: Session = Depends(get_db)):
     if not plant_id:
         return JSONResponse(status_code=400, content={"error": "plant_id não fornecido"})
 
-    imagens = (
-        db.query(models.PlantImage)
-        .filter(models.PlantImage.id == plant_id, models.PlantImage.user_id == user_id)
-        .all()
-    )
+    user_plant = db.query(models.PlantImage).filter(
+        models.PlantImage.id == plant_id,
+        models.PlantImage.user_id == user_id
+    ).first()
 
-    if not imagens:
+    informacoes = []
+    
+    if not user_plant:
         return JSONResponse(content={
             "especie": "Desconhecida",
             "familia": "Desconhecida",
             "descricao": "Não encontramos dados para essa planta.",
-            "imagens": []
+            "imagens": "sem imagens disponíveis"
         })
 
+    user_plant_variety = db.query(models.PlantInfos).filter(
+        models.PlantInfos.plant_image_id == plant_id
+    ).all()
+    
+    if not user_plant_variety:
+        informacoes.append({
+            "descricao": [],
+            "solution": [],
+            "path": [],
+            "color": []
+        })
+        return JSONResponse(content={
+        "especie": user_plant.name,
+        "descricao": user_plant.description,
+        "imagens": f"/uploads/{user_plant.image_path}",
+        "imagevariety": informacoes,
+        "cor": user_plant.color
+        
+    })
+
+    
+
+    for info in user_plant_variety:
+        informacoes.append({
+            "descricao": info.condition,
+            "solution": info.solution,
+            "path": info.image_path,
+            "color": info.color
+        })
     return JSONResponse(content={
-        "especie": imagens[0].plant.name,
-        "imagens": [
-            {
-                "descricao": img.description,
-                "cor": img.color,
-                "path": f"/uploads/{img.image_path}"
-            }
-            for img in imagens
-        ]
+        "especie": user_plant.name,
+        "descricao": user_plant.description,
+        "imagens": f"/uploads/{user_plant.image_path}",
+        "imagevariety": informacoes,
+        "cor": user_plant.color
+        
     })
 
 
@@ -595,10 +622,9 @@ async def update_plant_image(
     caminho_imagem_anterior = os.path.join(BASE_DIR, "uploads", imagem_db.image_path.lstrip("/"))
 
     image_bytes = await nova_imagem.read()
-    file_hash = None
-    filename = None
+    
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    file_hash = hashlib.sha256(image_bytes).hexdigest()
+
     with open(caminho_imagem_anterior, "rb") as f:
         img = Image.open(f).convert("RGB")
     description = imagem_db.description
@@ -614,15 +640,19 @@ async def update_plant_image(
             junto com isso, retorne uma solução se possível, para que possa ajudar a planta. Retorne também o status da planta, que vai das cores:
             Green, Yellow, Red.
             Se a imagem fornecida não for uma planta ou árvore, retorne apenas o json isplant = false, sem o resto.
-
+            E se a imagem fornecida, não for a mesma planta, por exemplo: a imagem que você leu que já existe é um tomate, e a imagem que o usuário mandou for uma batata, retorne o json sameplant = False
             {
               "condition": <aqui retorna o que mudou na planta>,
               "solution": <aqui vai a solução, pode dar algo bem detalhado e que realmente ajude!>,
               "color": <aqui o status da planta>,
-              "isplant": <true ou false>
+              "isplant": <true ou false>,
+              "sameplant": <true ou false>
             },
             {
                 "isplant": <true ou false>
+            },
+            {
+            "sameplant": <true ou false>
             }
             """
         ],
@@ -635,9 +665,9 @@ async def update_plant_image(
         try:
             data_json = json.loads(match.group())
         except json.JSONDecodeError:
-            data_json = {"condition": None, "color": None,"isplant": False}
+            data_json = {"condition": None, "color": None,"isplant": False, "sameplant": False}
     else:
-        data_json = {"condition": None, "color": None,"isplant": False}
+        data_json = {"condition": None, "color": None,"isplant": False, "sameplant": False}
 
     return JSONResponse(content=data_json)  # sem "dados" aninhado
 
@@ -660,7 +690,6 @@ async def register_new_plant_image(
     if image_url:
         file_bytes = await image_url.read()
         file_hash = hashlib.sha256(file_bytes).hexdigest()
-        await image_url.seek(0)  # reseta o ponteiro para leitura futura
     if file_hash:
         filename = f"user_{user_id}_plant_{plant_id}_{file_hash[:8]}.png"
         file_path = os.path.join("app/uploads", filename)
@@ -671,7 +700,8 @@ async def register_new_plant_image(
         condition= condition,
         solution=solution,
         color=color,
-        plant_image=file_path
+        image_path=filename,
+        plant_image_id=plant_id
     )
 
     

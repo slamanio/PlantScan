@@ -74,34 +74,25 @@
   Atualizar
 </button>
 
+<button id="prev-btn">⬅ Anterior</button>
+<button id="next-btn">Próxima ➡</button>
 
-  <h2 id="modal-plant-name">Nome da Planta</h2>
+<h2 id="modal-plant-name">Nome da Planta</h2>
 
-  <div id="modal-plant-pic" class="Green">
-    <div id="plant-carousel">
-    <img id="plant-image" src="" alt="Imagem da planta" style="width:300px; border-radius:8px;">
+<div id="plant-carousel">
+  <div id="modal-plant-pic">
+    <img id="plant-image" src="" alt="Imagem da planta" style="width:100%; border-radius:8px;">
     <div id="plant-description" style="margin-top:10px;"></div>
     <div id="plant-color-bar" style="height:5px; margin-top:5px;"></div>
 
-    <div style="margin-top:10px;">
-        <button onclick="prevImage()">⬅ Anterior</button>
-        <button onclick="nextImage()">Próxima ➡</button>
-    </div>
+    
+  </div>
 </div>
 
-  </div>
+<p id="modal-health-condition">Descrição da condição da planta aqui...</p>
 
-  <p id="modal-health-condition">Descrição da condição da planta aqui...</p>
 
-  <div class="chat-box">
-    <div id="chat-messages">
-      <!-- Mensagens vão aparecer aqui -->
-    </div>
-    <div class="chat-input">
-      <input type="text" id="chat-message-input" placeholder="Digite sua mensagem...">
-      <button onclick="sendChatMessage()">Enviar</button>
-    </div>
-  </div>
+  
 </div>
 
 
@@ -123,35 +114,41 @@ const updateBtn = document.getElementById('update-btn');
 const fileInput = document.getElementById('plant-image-input');
 let imagemAnterior = null;
 let plantid = null;
-let plantImages = [];  // Recebe do backend [{url, description, color}, ...]
+let imagesData = [];
 let currentIndex = 0;
+let imageIndex = 0;
 
-function loadCarousel(images) {
-    plantImages = images;
-    currentIndex = 0;
-    updateCarousel();
-}
-
-function updateCarousel() {
-    const img = plantImages[currentIndex];
-    if (!img) return;
-
-    document.getElementById("plant-image").src = img.url;
-    document.getElementById("plant-description").innerText = img.description || "Sem descrição";
-    document.getElementById("plant-color-bar").style.backgroundColor = img.color || "transparent";
-}
-
-function nextImage() {
-    if (plantImages.length === 0) return;
-    currentIndex = (currentIndex + 1) % plantImages.length;
-    updateCarousel();
+function updateCarousel(url, ) {
+    const item = variety[currentIndex];
+    console.log(item)
+    document.getElementById("plant-image").src = `/uploads/${item.path}`;
+    document.getElementById("plant-description").textContent = item.solution;
+    document.getElementById("plant-color-bar").style.backgroundColor = item.color;
 }
 
 function prevImage() {
-    if (plantImages.length === 0) return;
-    currentIndex = (currentIndex - 1 + plantImages.length) % plantImages.length;
-    updateCarousel();
+    if (imageIndex > 0){
+      imageIndex = (imageIndex -1);
+      currentIndex = (currentIndex - 1);
+    }else{
+      currentIndex = (currentIndex - 1);
+    }
+    console.log(imageIndex)
+    console.log(currentIndex)
 }
+
+function nextImage() {
+    if (imageIndex <= 0){
+      
+      currentIndex = (currentIndex + 1)
+    }
+    imageIndex = (imageIndex + 1)
+    currentIndex = (currentIndex + 1);
+ console.log(imageIndex)
+ console.log(currentIndex)
+}
+
+
 
  function getPlantId(id) {
     plantid = id;
@@ -193,16 +190,24 @@ async function atualizarPlanta(novaImagemFile) {
 
     const data = await response.json();
     console.log("Resposta do servidor:", data);
-    if (data.isplant == false){
+    const payload = data?.dados || data || {};
+        const cor = payload.color;
+        const condition = payload.condition;
+        const solution = payload.solution;
+        const isPlanta = payload.isplant;
+        const sameplant = payload.sameplant;
+    if (isPlanta == false){
       console.log("A imagem fornecida não é uma planta.")
-      console.log(data.isplant)
+
+    }
+    if (sameplant == false){
+      console.log("A imagem fornecida não é a mesma planta!")
+
     }
     else{
-      registrarstatusdaplanta(data)
+      registrarstatusdaplanta(condition, cor, solution, novaImagemFile)
     }
 
-    // 1️⃣ Atualiza a descrição da planta no modal
-      
 
   } catch (err) {
     console.error('Erro:', err);
@@ -210,15 +215,15 @@ async function atualizarPlanta(novaImagemFile) {
 }
 
 
-async function registrarstatusdaplanta(data){
+async function registrarstatusdaplanta(condicao, cor, solucao, file){
  console.log("[handlePlantClick] Iniciando atualização para planta ID:", plantid);
   try {
     const formData = new FormData();
-    formData.append('condition', data.condition);
+    formData.append('condition', condicao);
     formData.append("plant_id", plantid);
-    formData.append("image_url", novaImagemFile);
-    formData.append("solution", data.solution);
-    formData.append("color", data.color);
+    formData.append("image_url", file);
+    formData.append("solution", solucao);
+    formData.append("color", cor);
 
     const response = await fetch(`${window.location.origin}/register_new_plant_image`, {
       method: 'POST',
@@ -253,60 +258,30 @@ function handlePlantClick(plantId) {
     return response.json();
   })
   .then(data => {
-    // Atualiza nome e família no modal
-    const nomeElem = document.getElementById("modal-plant-name");
-    if (nomeElem) nomeElem.textContent = data.especie || "Desconhecida";
-    
-    // Atualiza imagens
-    const container = document.getElementById("modal-plant-pic");
-    container.className = "modal-plant-pic " + (data.imagens[0].cor);
-    if (!container) {
-      console.warn("[handlePlantClick] modal-plant-pic não encontrado");
-      return;
-    }
-    container.innerHTML = "";
-    
+    console.log(data)
+    const payload = data?.dados || data || {};
+        const cor = payload.cor;
+        const condition = payload.descricao;
+        const especie = payload.especie;
+        const image= payload.imagens;
+        const variety = (payload.imagevariety || []).map(v => v.path);
+        const descvariety = (payload.imagevariety || []).map(c => c.descricao);
+        const solvariety = (payload.imagevariety || []).map(d => d.solution);
+        const colorvariety = (payload.imagevariety || []).map(r => r.color);
+        if (variety.length > 0) {
+            setHealthConditionText(condition, especie, image, cor, variety, descvariety, solvariety, colorvariety);
+        } else {
+            setHealthConditionText(condition, especie, image, cor, [], [], [], []);
+        }
 
-    if (data.imagens && data.imagens.length > 0) {
-      
-  // Atualize a descrição geral (se quiser) com a primeira imagem ou alguma info geral
-  const geralDesc = document.getElementById("modal-health-condition");
-if (geralDesc) {
-  const texto = `Condição: ${data.imagens[0].cor || "Cor desconhecida"} - ${data.imagens[0].descricao || "Sem descrição"}`;
-  setHealthConditionText(texto);
-}
+        }       
 
 
-
-  data.imagens.forEach(img => {
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("plant-image-item");
-
-    const imgElem = document.createElement("img");
-    imgElem.src = img.path;
-    
-    imgElem.alt = img.descricao || "Imagem da planta";
-
-    // Cria descrição individual para cada imagem
-
-    wrapper.appendChild(imgElem);
-
-
-    container.appendChild(wrapper);
-  });
-} else {
-  container.innerHTML = "<p>Nenhuma imagem disponível.</p>";
-}
-
-
-    // Exibe o modal
-    const modal = document.getElementById("plant-modal");
-    if (modal) modal.classList.remove("hidden");
-  })
+  )
   .catch(err => {
     console.error("[handlePlantClick] Erro:", err);
   });
-}
+} //fim da funcao
 
 
 
@@ -362,63 +337,71 @@ btn.addEventListener("click", () => {
         body: JSON.stringify({ theme: isNight ? "dark" : "light" })
     });
 });
-function sendChatMessage() {
-  const input = document.getElementById("chat-message-input");
-  const message = input.value.trim();
-  if (!message) return;
 
-  // Adiciona mensagem do usuário
-  addMessage(message, "user");
+function setHealthConditionText(condition, especie, image, cor, variety, descvariety, solvariety, colorvariety) {
+    // Garantir que sejam arrays
+    variety = Array.isArray(variety) ? variety : [];
+    descvariety = Array.isArray(descvariety) ? descvariety : [];
+    solvariety = Array.isArray(solvariety) ? solvariety : [];
+    colorvariety = Array.isArray(colorvariety) ? colorvariety : [];
 
-  // Limpa input
-  input.value = "";
+    let currentIndex = 0;
 
-  // Simula resposta automática
-  setTimeout(() => {
-    addMessage("Entendido! Vou verificar sobre essa planta.", "bot");
-  }, 800);
-}
+    // Função para atualizar a imagem e descrição com base no índice atual
+    function updateCarousel() {
+        const imgElement = document.getElementById("plant-image");
+        const descElement = document.getElementById("plant-description");
+        const colorBar = document.getElementById("plant-color-bar");
 
-function addMessage(text, sender) {
-  const messagesContainer = document.getElementById("chat-messages");
-  const msg = document.createElement("div");
-  msg.classList.add("chat-message", sender);
-  msg.textContent = text;
-  messagesContainer.appendChild(msg);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-function setHealthConditionText(fullText) {
-  const container = document.getElementById("modal-health-condition");
-  const maxLength = 300;
+        if (variety.length > 0) {
+            imgElement.src = image;
+            descElement.textContent = condition;
+            colorBar.style.backgroundColor = cor || "#ccc";
+            if (currentIndex > 0){
+            imgElement.src = variety[currentIndex];
+            descElement.textContent = descvariety[currentIndex] || "";
+            colorBar.style.backgroundColor = colorvariety[currentIndex] || "#ccc";
+            }
 
-  if (fullText.length <= maxLength) {
-    container.textContent = fullText;
-    return; // texto curto, só mostra normal
-  }
-
-  const shortText = fullText.slice(0, maxLength) + "...";
-
-  container.textContent = shortText;
-
-  const moreLink = document.createElement("span");
-  moreLink.textContent = "Mais";
-  moreLink.classList.add("more-link");
-
-  moreLink.onclick = () => {
-    const expanded = container.classList.toggle("expanded");
-    if (expanded) {
-      container.textContent = fullText;
-      moreLink.textContent = "Menos";
-      container.appendChild(moreLink);
-    } else {
-      container.textContent = shortText;
-      moreLink.textContent = "Mais";
-      container.appendChild(moreLink);
+        } else {
+            imgElement.src = image; // Fallback para imagem principal
+            descElement.textContent = condition;
+            colorBar.style.backgroundColor = cor || "#ccc";
+        }
     }
-  };
 
-  container.appendChild(moreLink);
+    // Botões
+    document.getElementById("prev-btn").onclick = function () {
+        if (variety.length > 0) {
+            currentIndex = (currentIndex - 1 + variety.length) % variety.length;
+            updateCarousel();
+        }
+    };
+
+    document.getElementById("next-btn").onclick = function () {
+        if (variety.length > 0) {
+            currentIndex = (currentIndex + 1) % variety.length;
+            updateCarousel();
+        }
+    };
+
+    // Inicializa a exibição
+    updateCarousel();
+
+    // Nome e espécie
+    document.getElementById("modal-plant-name").textContent = especie || "Nome desconhecido";
+    document.getElementById("modal-health-condition").textContent = condition || "Sem descrição";
+
+    // Exibe o modal
+    const modal = document.getElementById("plant-modal");
+    if (modal) modal.classList.remove("hidden");
+  
 }
+
+
+    
+    
+
 
 </script>
 

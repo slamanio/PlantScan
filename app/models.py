@@ -48,9 +48,10 @@ class PlantInfos(Base):
     __tablename__ = 'plant_infos'
 
     id = Column(Integer, primary_key=True, index=True)
-    condition= Column(String(2000), nullable=True)
-    solution = Column(String(2000), nullable=True)
-
+    condition= Column(String(2000), nullable=False)
+    solution = Column(String(2000), nullable=False)
+    image_path = Column(String(2000), nullable=False)
+    color = Column(String(255), nullable=False)
     # Relacionamento direto com PlantImage
     plant_image_id = Column(Integer, ForeignKey("plant_images.id", ondelete="CASCADE"), nullable=False)
     plant_image = relationship("PlantImage", back_populates="infos")

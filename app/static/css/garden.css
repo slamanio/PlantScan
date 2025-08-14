@@ -566,3 +566,27 @@ body.dark .modal-content::-webkit-scrollbar-thumb {
 body.dark .modal-content::-webkit-scrollbar-thumb:hover {
   background-color: #397db6;
 }
+#plant-carousel {
+  position: relative;
+  width: 300px; /* ajuste se precisar */
+}
+
+
+#modal-plant-pic button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#btn-prev {
+  left: 5px;
+}
+
+#btn-next {
+  right: 5px;
+}
