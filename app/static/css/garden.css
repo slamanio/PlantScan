@@ -27,6 +27,52 @@ body {
   font-size: 18px;
   transition: background-color 1s ease, color 1s ease;
 }
+/* Dropdown azul combinando com o modal */
+/* Dropdown azul combinando com o modal */
+.plant-dropdown {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #4a90e2; /* Azul do modal */
+  border: 1px solid #2c6cb0; /* Borda azul mais escura */
+  padding: 10px 40px 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  color: white;
+  transition: all 0.3s ease;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" height="20" width="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><polygon points="0,0 20,0 10,10"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  top: 15px;
+  left: 20px; /* lado esquerdo */
+}
+
+/* Hover */
+.plant-dropdown:hover {
+  background-color: #3d7ec9; /* Azul mais escuro */
+}
+
+/* Focus */
+.plant-dropdown:focus {
+  border-color: #1e4e85;
+  box-shadow: 0 0 5px rgba(30, 78, 133, 0.5);
+}
+.plant-dropdown-option {
+  color: #fff;           
+  border-radius: 8px;  
+  background-color: #4a90e2; 
+}
+
+/* Hover dentro do select (nem todos os browsers aplicam em <option>) */
+.plant-dropdown-option:hover {
+  background-color: #3d7ec9;
+}
+
 body.dark .container {
   background-color: rgba(20, 20, 40, 0.8);
   color: #cce6ff;

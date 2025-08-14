@@ -314,10 +314,10 @@ async def userplant_info(request: Request, db: Session = Depends(get_db)):
     
     if not user_plant_variety:
         informacoes.append({
-            "descricao": [],
-            "solution": [],
-            "path": [],
-            "color": []
+            "descricao": False,
+            "solution": False,
+            "path": False,
+            "color": False
         })
         return JSONResponse(content={
         "especie": user_plant.name,
@@ -604,9 +604,12 @@ async def update_plant_image(
     request: Request, 
     db: Session = Depends(get_db),
     nova_imagem: UploadFile = File(...),
+    imagem_anterior: str = Form(...),
+    plant_id: int = Form(...)
 ):
     form = await request.form()
     plant_id = form.get("plant_id")
+    imagem_anterior = form.get("imagem_anterior")
     user_id = request.session.get("user_id")
     
     imagem_db = (
@@ -614,12 +617,13 @@ async def update_plant_image(
         .filter(models.PlantImage.id == plant_id, models.PlantImage.user_id == user_id)
         .first()
     )
-    
+    url = f"{imagem_anterior}"
+    caminho_local = url.replace("http://127.0.0.1:8000/", "")
     if not imagem_db:
         return JSONResponse(status_code=404, content={"error": "Imagem anterior não encontrada"})
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    caminho_imagem_anterior = os.path.join(BASE_DIR, "uploads", imagem_db.image_path.lstrip("/"))
+    caminho_imagem_anterior = os.path.join(BASE_DIR, f"{caminho_local}")
 
     image_bytes = await nova_imagem.read()
     

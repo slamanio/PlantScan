@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="/static/css/garden.css">
+<link rel="stylesheet" href="/static/css/garden.css?v=2025-08-14-1">
+
 <link rel="shortcut icon" href="/static/assets/imgs/chip.png">
 <title>PlantScan - Jardim </title>
 </head>
@@ -64,7 +65,10 @@
   <!-- Barra vertical de saúde (classe muda conforme condição) -->
   <div id="health-bar" class="health-bar"></div>
 
-  <div class="modal-content">
+  <div class="modal-content" id="modal-content">
+
+
+
   <button class="close-modal" onclick="closeModal()" aria-label="Fechar modal">×</button>
 
   <input type="file" id="plant-image-input" accept="image/*" style="display:none" />
@@ -74,20 +78,19 @@
   Atualizar
 </button>
 
-<button id="prev-btn">⬅ Anterior</button>
-<button id="next-btn">Próxima ➡</button>
+
 
 <h2 id="modal-plant-name">Nome da Planta</h2>
 
-<div id="plant-carousel">
-  <div id="modal-plant-pic">
+
+  <div id="modal-plant-pic" class="modal-plant-pic">
     <img id="plant-image" src="" alt="Imagem da planta" style="width:100%; border-radius:8px;">
     <div id="plant-description" style="margin-top:10px;"></div>
     <div id="plant-color-bar" style="height:5px; margin-top:5px;"></div>
 
     
   </div>
-</div>
+
 
 <p id="modal-health-condition">Descrição da condição da planta aqui...</p>
 
@@ -112,41 +115,9 @@ const sun = document.querySelector(".sun");
 const moon = document.querySelector(".moon");
 const updateBtn = document.getElementById('update-btn');
 const fileInput = document.getElementById('plant-image-input');
+const dropdown = document.getElementById('dropdown')
 let imagemAnterior = null;
 let plantid = null;
-let imagesData = [];
-let currentIndex = 0;
-let imageIndex = 0;
-
-function updateCarousel(url, ) {
-    const item = variety[currentIndex];
-    console.log(item)
-    document.getElementById("plant-image").src = `/uploads/${item.path}`;
-    document.getElementById("plant-description").textContent = item.solution;
-    document.getElementById("plant-color-bar").style.backgroundColor = item.color;
-}
-
-function prevImage() {
-    if (imageIndex > 0){
-      imageIndex = (imageIndex -1);
-      currentIndex = (currentIndex - 1);
-    }else{
-      currentIndex = (currentIndex - 1);
-    }
-    console.log(imageIndex)
-    console.log(currentIndex)
-}
-
-function nextImage() {
-    if (imageIndex <= 0){
-      
-      currentIndex = (currentIndex + 1)
-    }
-    imageIndex = (imageIndex + 1)
-    currentIndex = (currentIndex + 1);
- console.log(imageIndex)
- console.log(currentIndex)
-}
 
 
 
@@ -174,16 +145,18 @@ document.getElementById("plant-modal").addEventListener("click", function(event)
 
 async function atualizarPlanta(novaImagemFile) {
   console.log("[handlePlantClick] Iniciando atualização para planta ID:", plantid);
+  const imgElement = document.getElementById("plant-image");
   try {
     const formData = new FormData();
     formData.append('nova_imagem', novaImagemFile);
-    formData.append("plant_id", plantid);
+    formData.append("imagem_anterior", imgElement.src);
+    formData.append('plant_id', plantid)
 
     const response = await fetch(`${window.location.origin}/update_plant_image`, {
       method: 'POST',
       body: formData
     });
-
+    console.log(response)
     if (!response.ok) {
       throw new Error('Erro ao atualizar planta');
     }
@@ -268,11 +241,9 @@ function handlePlantClick(plantId) {
         const descvariety = (payload.imagevariety || []).map(c => c.descricao);
         const solvariety = (payload.imagevariety || []).map(d => d.solution);
         const colorvariety = (payload.imagevariety || []).map(r => r.color);
-        if (variety.length > 0) {
-            setHealthConditionText(condition, especie, image, cor, variety, descvariety, solvariety, colorvariety);
-        } else {
-            setHealthConditionText(condition, especie, image, cor, [], [], [], []);
-        }
+        
+        setHealthConditionText(condition, especie, image, cor, variety, descvariety, solvariety, colorvariety);
+        
 
         }       
 
@@ -283,10 +254,28 @@ function handlePlantClick(plantId) {
   });
 } //fim da funcao
 
+function hideUpdateButton() {
+    if (updateBtn) {
+        updateBtn.style.display = "none";
+    }
+}
 
-
+function hideDropdown() {
+    if (dropdown) {
+        dropdown.style.display = "none";
+    }
+}
 function closeModal() {
   document.getElementById("plant-modal").classList.add("hidden");
+   document.getElementById("plant-image").src = "";
+    document.getElementById("plant-description").textContent = "";
+    document.getElementById("plant-color-bar").style.backgroundColor = "";
+    document.getElementById("modal-plant-name").textContent = "";
+    document.getElementById("modal-health-condition").textContent = "";
+
+    // Limpar opções do dropdown
+    const options = document.getElementById("Dropdown");
+    options.innerHTML = "";
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -344,53 +333,87 @@ function setHealthConditionText(condition, especie, image, cor, variety, descvar
     descvariety = Array.isArray(descvariety) ? descvariety : [];
     solvariety = Array.isArray(solvariety) ? solvariety : [];
     colorvariety = Array.isArray(colorvariety) ? colorvariety : [];
-
+    console.log(variety)
     let currentIndex = 0;
+ 
 
     // Função para atualizar a imagem e descrição com base no índice atual
-    function updateCarousel() {
+
         const imgElement = document.getElementById("plant-image");
-        const descElement = document.getElementById("plant-description");
+        const descElement = document.getElementById("modal-health-condition");
+        const plantpic = document.getElementById("modal-plant-pic");
         const colorBar = document.getElementById("plant-color-bar");
+        const options = document.getElementById("modal-content");
+        console.log(options)
+        if(variety[0] == false){
 
-        if (variety.length > 0) {
-            imgElement.src = image;
-            descElement.textContent = condition;
-            colorBar.style.backgroundColor = cor || "#ccc";
-            if (currentIndex > 0){
-            imgElement.src = variety[currentIndex];
-            descElement.textContent = descvariety[currentIndex] || "";
-            colorBar.style.backgroundColor = colorvariety[currentIndex] || "#ccc";
-            }
+          plantpic.classList.add(cor)
+          imgElement.src = image;
+          descElement.textContent = condition || "Sem descrição";
+        
+        }else{
+        const dropdown = document.createElement("select")
+        dropdown.classList.add("plant-dropdown")
+        dropdown.id = "dropdown";
+        options.appendChild(dropdown)
+        const firstOp = document.createElement("option")
+        let firstindex = 0
+        plantpic.classList.add(cor)
+        console.log(plantpic)
+        firstOp.value = `${especie} #${firstindex}`
+        firstOp.textContent = `${especie} #${firstindex}`
+        firstOp.classList.add("plant-dropdown-option")
+        imgElement.src = image;
+        descElement.textContent = condition || "Sem descrição";
+        dropdown.appendChild(firstOp);
 
-        } else {
-            imgElement.src = image; // Fallback para imagem principal
-            descElement.textContent = condition;
-            colorBar.style.backgroundColor = cor || "#ccc";
-        }
+        variety.forEach((op, index) => {
+        const dot = document.createElement("option");
+        dot.value = `${especie} ${index + 1}`;
+        dot.textContent = `${especie} #${index + 1}`;
+        
+        dot.classList.add("plant-dropdown-option");
+        dropdown.appendChild(dot);
+         
+    })};
+
+
+    dropdown.addEventListener("change", function() {
+    // Pega o índice da opção selecionada
+    const selectedIndex = dropdown.selectedIndex;
+     plantpic.classList.remove(cor);
+    plantpic.classList.remove(...colorvariety);
+    // Atualiza os elementos
+    const imgElement = document.getElementById("plant-image");
+    const descElement = document.getElementById("plant-description");
+    const colorBar = document.getElementById("plant-color-bar");
+
+    if (selectedIndex === 0) {
+      console.log(selectedIndex)
+      plantpic.classList.remove(cor)
+      hideUpdateButton()
+        // Quando for a primeira opção
+        imgElement.src = image; // imagem padrão
+        document.getElementById("modal-health-condition").textContent = condition;
+        
+        plantpic.classList.add(cor)
+        console.log(plantpic)
+    } else {
+      console.log(selectedIndex)
+
+        // Para as demais opções
+        imgElement.src = `uploads/${variety[selectedIndex - 1]}`;
+        document.getElementById("modal-health-condition").textContent = descvariety[selectedIndex - 1] || "";
+        plantpic.classList.add(colorvariety[selectedIndex - 1]);
+        console.log(plantpic)
     }
+});
+    
 
-    // Botões
-    document.getElementById("prev-btn").onclick = function () {
-        if (variety.length > 0) {
-            currentIndex = (currentIndex - 1 + variety.length) % variety.length;
-            updateCarousel();
-        }
-    };
-
-    document.getElementById("next-btn").onclick = function () {
-        if (variety.length > 0) {
-            currentIndex = (currentIndex + 1) % variety.length;
-            updateCarousel();
-        }
-    };
-
-    // Inicializa a exibição
-    updateCarousel();
-
+    
     // Nome e espécie
     document.getElementById("modal-plant-name").textContent = especie || "Nome desconhecido";
-    document.getElementById("modal-health-condition").textContent = condition || "Sem descrição";
+
 
     // Exibe o modal
     const modal = document.getElementById("plant-modal");
