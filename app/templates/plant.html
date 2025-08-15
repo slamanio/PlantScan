@@ -373,14 +373,17 @@ function setHealthConditionText(condition, especie, image, cor, variety, descvar
         dot.textContent = `${especie} #${index + 1}`;
         
         dot.classList.add("plant-dropdown-option");
+        dot.id = "option";
         dropdown.appendChild(dot);
          
     })};
 
 
-    dropdown.addEventListener("change", function() {
+    options.addEventListener("change", function() {
     // Pega o índice da opção selecionada
-    const selectedIndex = dropdown.selectedIndex;
+    const dot = document.getElementById("option")
+    const selectedIndex = dot.selectedIndex;
+    console.log(selectedIndex)
      plantpic.classList.remove(cor);
     plantpic.classList.remove(...colorvariety);
     // Atualiza os elementos

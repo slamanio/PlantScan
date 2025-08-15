@@ -395,7 +395,10 @@ function handlePlantClick(plantName) {
   })
   .then(data => {
     const { especie, familia, descricao, image, imagegreen, imageyellow, imagered } = data;
-
+    console.log(imagegreen)
+    console.log(imageyellow)
+    console.log(imagered)
+    console.log(image)
     const respostaHTML = `
       <div style="margin-bottom: 8px;">
         <span style="font-weight: bold; color: #388e3c;">🌿 Espécie:</span><br><span>${especie}</span>

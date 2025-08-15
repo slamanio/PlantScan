@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, update
 from .database import SessionLocal
 from PIL import Image
 import google.generativeai as genai
 import io
 import shutil, os
 import hashlib
-from .models import User, Plant, PlantImage, PlantInfos
+from .models import User, Plant, PlantImage
 from sqlalchemy.orm import joinedload
 from . import models, database
 from passlib.hash import bcrypt
@@ -217,7 +218,7 @@ def logout(request: Request):
     return RedirectResponse(url="/login", status_code=302)
 
 @router.get("/update", name="update")
-def update(request: Request, db: Session = Depends(get_db)):
+def updateuser(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
     user = db.query(models.User).filter(models.User.id == user_id).first()
     
@@ -256,23 +257,24 @@ async def planta_info(request: Request, db: Session = Depends(get_db)):
     nome = form.get("nome")
     planta = db.query(Plant).filter(Plant.name == nome).first()
     if planta:
-        # 🔹 Consulta imagens da planta
         imagens = db.query(models.PlantImage).filter(models.PlantImage.plant_id == planta.id).all()
-    # 🔹 Consulta imagens da planta separadas por cor
+
         cores = ["Green", "Yellow", "Red"]
         imagens_por_cor = {cor.lower(): [] for cor in cores}
+        todas_imagens = []
+        for img in imagens:
+            for path, cor in zip(img.image_path, img.color):
+                path_limpo = path.replace("app/", "", 1)  # Remove o "/app/"
+                todas_imagens.append(path_limpo)
 
-        for cor in cores:
-            imgs = db.query(models.PlantImage).filter(
-                models.PlantImage.plant_id == planta.id,
-                models.PlantImage.color == cor
-                
-            ).all()
-            imagens_por_cor[cor.lower()] = [f"/uploads/{img.image_path}" for img in imgs]
+                cor_lower = cor.lower()
+                if cor_lower in imagens_por_cor:
+                    imagens_por_cor[cor_lower].append(path_limpo)
+
         return JSONResponse(content={
             "especie": planta.name,
             "familia": planta.species,
-            "image": [f"/uploads/{img.image_path}" for img in imagens],
+            "image": todas_imagens,
             "imagegreen": imagens_por_cor["green"],
             "imageyellow": imagens_por_cor["yellow"],
             "imagered": imagens_por_cor["red"]
@@ -308,40 +310,18 @@ async def userplant_info(request: Request, db: Session = Depends(get_db)):
             "imagens": "sem imagens disponíveis"
         })
 
-    user_plant_variety = db.query(models.PlantInfos).filter(
-        models.PlantInfos.plant_image_id == plant_id
-    ).all()
     
-    if not user_plant_variety:
-        informacoes.append({
-            "descricao": False,
-            "solution": False,
-            "path": False,
-            "color": False
-        })
-        return JSONResponse(content={
-        "especie": user_plant.name,
-        "descricao": user_plant.description,
-        "imagens": f"/uploads/{user_plant.image_path}",
-        "imagevariety": informacoes,
-        "cor": user_plant.color
+    
+    
         
-    })
 
     
 
-    for info in user_plant_variety:
-        informacoes.append({
-            "descricao": info.condition,
-            "solution": info.solution,
-            "path": info.image_path,
-            "color": info.color
-        })
+    
     return JSONResponse(content={
         "especie": user_plant.name,
         "descricao": user_plant.description,
         "imagens": f"/uploads/{user_plant.image_path}",
-        "imagevariety": informacoes,
         "cor": user_plant.color
         
     })
@@ -489,41 +469,71 @@ async def register_plant(
     file_hash = None
     filename = None
     user_id = request.session.get("user_id")
+    nome_planta = request.query_params.get("nome")
 
     if image:
         file_bytes = await image.read()
         file_hash = hashlib.sha256(file_bytes).hexdigest()
         await image.seek(0)  # reseta o ponteiro para leitura futura
-
+        
     # 🔹 Verifica se a planta já existe no banco global
     existing_plant = db.query(models.Plant).filter(models.Plant.name == nome).first()
-
+    
+    
     # 🔹 Se a planta já existe (registro global)
     if existing_plant:
         existing_plant.count += 1
         db.commit()
         db.refresh(existing_plant)
-
-
-        if file_hash:
-            filename = f"user_{user_id}_plant_{existing_plant.id}_{file_hash[:8]}.png"
-            file_path = os.path.join("app/uploads", filename)
-            with open(file_path, "wb") as buffer:
-                buffer.write(file_bytes)
-
-            plant_image = models.PlantImage(
-                    user_id=user_id,
-                    name=nome,
-                    image_path=filename,
-                    image_hash=file_hash,
-                    description=descricao,
-                    color = cor,
-                    plant_id=existing_plant.id
+        filename = f"user_{user_id}_plant_{existing_plant.id}_{file_hash[:8]}.png"
+        file_path = os.path.join("app/uploads", filename)
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_bytes)
+        plant_image = (
+            db.query(models.PlantImage)
+            .filter(models.PlantImage.user_id == user_id, models.PlantImage.plant_id == existing_plant.id)
+            .first()
+        )
+        if plant_image:
+            if file_hash:
+                stmt = (
+                    update(models.PlantImage)
+                    .where(models.PlantImage.id == plant_image.id)
+                    .values(
+                        image_path=func.JSON_ARRAY_APPEND(
+                            func.COALESCE(models.PlantImage.image_path, func.JSON_ARRAY()),
+                            '$',
+                            file_path
+                        ),
+                        description=func.JSON_ARRAY_APPEND(
+                            func.COALESCE(models.PlantImage.description, func.JSON_ARRAY()),
+                            '$',
+                            descricao
+                        ),
+                        color=func.JSON_ARRAY_APPEND(
+                            func.COALESCE(models.PlantImage.color, func.JSON_ARRAY()),
+                            '$',
+                            cor
+                        )
+                    )
+                )
+                db.execute(stmt)
+                db.commit()
+        else:
+            # Novo registro do usuário
+            new_image = models.PlantImage(
+                name=nome,
+                description=[descricao],
+                image_path=[file_path] if file_path else [],
+                color=[cor],
+                plant_id=existing_plant.id,
+                user_id=user_id
             )
-            db.add(plant_image)
+            db.add(new_image)
             db.commit()
 
         return {"message": f"Planta '{nome}' já existe, contador atualizado e imagem salva!"}
+
 
     # 🔹 Se a planta NÃO existe, cria o registro global
     new_plant = models.Plant(
@@ -546,10 +556,9 @@ async def register_plant(
         plant_image = models.PlantImage(
                     user_id=user_id,
                     name=new_plant.name,
-                    image_path=filename,
-                    image_hash=file_hash,
-                    description=descricao,
-                    color = cor,
+                    image_path=[file_path],
+                    description=[descricao],
+                    color = [cor],
                     plant_id=new_plant.id
             )
         db.add(plant_image)

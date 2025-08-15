@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -32,26 +32,13 @@ class PlantImage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(1500), nullable=False)
-    description = Column(String(1500), nullable=True)
-    image_path = Column(String(255), nullable=False)
-    image_hash = Column(String(255), unique=True, nullable=False)
-    color = Column(String(255), nullable=False)
+    description = Column(JSON, nullable=True)
+    image_path = Column(JSON, nullable=False)
+    color = Column(JSON, nullable=False)
 
     plant_id = Column(Integer, ForeignKey("plants.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     plant = relationship("Plant", back_populates="images")
     user = relationship("User", back_populates="plant_images")
-    infos = relationship("PlantInfos", back_populates="plant_image", cascade="all, delete")
 
-class PlantInfos(Base):
-    __tablename__ = 'plant_infos'
-
-    id = Column(Integer, primary_key=True, index=True)
-    condition= Column(String(2000), nullable=False)
-    solution = Column(String(2000), nullable=False)
-    image_path = Column(String(2000), nullable=False)
-    color = Column(String(255), nullable=False)
-    # Relacionamento direto com PlantImage
-    plant_image_id = Column(Integer, ForeignKey("plant_images.id", ondelete="CASCADE"), nullable=False)
-    plant_image = relationship("PlantImage", back_populates="infos")
