@@ -146,6 +146,7 @@ document.getElementById("plant-modal").addEventListener("click", function(event)
 async function atualizarPlanta(novaImagemFile) {
   console.log("[handlePlantClick] Iniciando atualização para planta ID:", plantid);
   const imgElement = document.getElementById("plant-image");
+  console.log("imagem mandada: ", imgElement)
   try {
     const formData = new FormData();
     formData.append('nova_imagem', novaImagemFile);
@@ -233,16 +234,15 @@ function handlePlantClick(plantId) {
   .then(data => {
     console.log(data)
     const payload = data?.dados || data || {};
-        const cor = payload.cor;
+        
         const condition = payload.descricao;
         const especie = payload.especie;
-        const image= payload.imagens;
-        const variety = (payload.imagevariety || []).map(v => v.path);
-        const descvariety = (payload.imagevariety || []).map(c => c.descricao);
-        const solvariety = (payload.imagevariety || []).map(d => d.solution);
-        const colorvariety = (payload.imagevariety || []).map(r => r.color);
+        const image = payload.imagens.map(img => img.caminho);
+        const cor = payload.imagens.map(img => img.cor);
+
+
         
-        setHealthConditionText(condition, especie, image, cor, variety, descvariety, solvariety, colorvariety);
+        setHealthConditionText(condition, especie, image, cor);
         
 
         }       
@@ -327,102 +327,68 @@ btn.addEventListener("click", () => {
     });
 });
 
-function setHealthConditionText(condition, especie, image, cor, variety, descvariety, solvariety, colorvariety) {
-    // Garantir que sejam arrays
-    variety = Array.isArray(variety) ? variety : [];
-    descvariety = Array.isArray(descvariety) ? descvariety : [];
-    solvariety = Array.isArray(solvariety) ? solvariety : [];
-    colorvariety = Array.isArray(colorvariety) ? colorvariety : [];
-    console.log(variety)
-    let currentIndex = 0;
- 
+function setHealthConditionText(condition, especie, imagens, cores) {
+    console.log("Recebido do backend:", imagens, cores);
 
-    // Função para atualizar a imagem e descrição com base no índice atual
-
-        const imgElement = document.getElementById("plant-image");
-        const descElement = document.getElementById("modal-health-condition");
-        const plantpic = document.getElementById("modal-plant-pic");
-        const colorBar = document.getElementById("plant-color-bar");
-        const options = document.getElementById("modal-content");
-        console.log(options)
-        if(variety[0] == false){
-
-          plantpic.classList.add(cor)
-          imgElement.src = image;
-          descElement.textContent = condition || "Sem descrição";
-        
-        }else{
-        const dropdown = document.createElement("select")
-        dropdown.classList.add("plant-dropdown")
-        dropdown.id = "dropdown";
-        options.appendChild(dropdown)
-        const firstOp = document.createElement("option")
-        let firstindex = 0
-        plantpic.classList.add(cor)
-        console.log(plantpic)
-        firstOp.value = `${especie} #${firstindex}`
-        firstOp.textContent = `${especie} #${firstindex}`
-        firstOp.classList.add("plant-dropdown-option")
-        imgElement.src = image;
-        descElement.textContent = condition || "Sem descrição";
-        dropdown.appendChild(firstOp);
-
-        variety.forEach((op, index) => {
-        const dot = document.createElement("option");
-        dot.value = `${especie} ${index + 1}`;
-        dot.textContent = `${especie} #${index + 1}`;
-        
-        dot.classList.add("plant-dropdown-option");
-        dot.id = "option";
-        dropdown.appendChild(dot);
-         
-    })};
-
-
-    options.addEventListener("change", function() {
-    // Pega o índice da opção selecionada
-    const dot = document.getElementById("option")
-    const selectedIndex = dot.selectedIndex;
-    console.log(selectedIndex)
-     plantpic.classList.remove(cor);
-    plantpic.classList.remove(...colorvariety);
-    // Atualiza os elementos
     const imgElement = document.getElementById("plant-image");
-    const descElement = document.getElementById("plant-description");
-    const colorBar = document.getElementById("plant-color-bar");
+    const descElement = document.getElementById("modal-health-condition");
+    const plantpic = document.getElementById("modal-plant-pic");
+    const options = document.getElementById("modal-content");
 
-    if (selectedIndex === 0) {
-      console.log(selectedIndex)
-      plantpic.classList.remove(cor)
-      hideUpdateButton()
-        // Quando for a primeira opção
-        imgElement.src = image; // imagem padrão
-        document.getElementById("modal-health-condition").textContent = condition;
-        
-        plantpic.classList.add(cor)
-        console.log(plantpic)
-    } else {
-      console.log(selectedIndex)
+    // Limpa classes antigas de cor
+    plantpic.className = ""; 
 
-        // Para as demais opções
-        imgElement.src = `uploads/${variety[selectedIndex - 1]}`;
-        document.getElementById("modal-health-condition").textContent = descvariety[selectedIndex - 1] || "";
-        plantpic.classList.add(colorvariety[selectedIndex - 1]);
-        console.log(plantpic)
+    // Função helper para garantir que o valor seja string
+    const getFirst = val => Array.isArray(val) ? (val[0] || "") : (val || "");
+
+    // Se só tiver uma imagem
+    if (imagens.length <= 1) {
+        const imgData = imagens[0] || {};
+        console.log(imgData)
+        const cor = getFirst(cores);
+        console.log(cor)
+        plantpic.classList.add(cor);
+        imgElement.src = getFirst(imgData);
+        descElement.textContent = condition || "Sem descrição";
+    } 
+    // Se tiver mais de uma imagem
+    else {
+        const dropdown = document.createElement("select");
+        dropdown.classList.add("plant-dropdown");
+        dropdown.id = "dropdown";
+        options.appendChild(dropdown);
+
+        imagens.forEach((imgData, index) => {
+            const opt = document.createElement("option");
+            opt.value = index;
+            opt.textContent = `${especie} #${index}`;
+            opt.classList.add("plant-dropdown-option");
+            dropdown.appendChild(opt);
+        });
+
+        // Inicializa com a primeira
+        plantpic.classList.add(getFirst(imagens[0].cor));
+        imgElement.src = getFirst(imagens[0].caminho);
+        descElement.textContent = getFirst(imagens[0].descricao) || condition || "Sem descrição";
+
+        // Listener para troca
+        dropdown.addEventListener("change", function() {
+            const idx = parseInt(this.value, 10);
+            plantpic.className = "";
+            plantpic.classList.add(getFirst(imagens[idx].cor));
+            imgElement.src = getFirst(imagens[idx].caminho);
+            descElement.textContent = getFirst(imagens[idx].descricao) || condition || "Sem descrição";
+        });
     }
-});
-    
 
-    
     // Nome e espécie
     document.getElementById("modal-plant-name").textContent = especie || "Nome desconhecido";
-
 
     // Exibe o modal
     const modal = document.getElementById("plant-modal");
     if (modal) modal.classList.remove("hidden");
-  
 }
+
 
 
     

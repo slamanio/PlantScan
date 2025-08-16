@@ -295,12 +295,16 @@ async def userplant_info(request: Request, db: Session = Depends(get_db)):
     if not plant_id:
         return JSONResponse(status_code=400, content={"error": "plant_id não fornecido"})
 
-    user_plant = db.query(models.PlantImage).filter(
-        models.PlantImage.id == plant_id,
-        models.PlantImage.user_id == user_id
-    ).first()
+    user_plant = (
+        db.query(models.PlantImage)
+        .filter(
+            models.PlantImage.id == plant_id,
+            models.PlantImage.user_id == user_id
+        )
+        .first()
+    )
 
-    informacoes = []
+    
     
     if not user_plant:
         return JSONResponse(content={
@@ -309,20 +313,27 @@ async def userplant_info(request: Request, db: Session = Depends(get_db)):
             "descricao": "Não encontramos dados para essa planta.",
             "imagens": "sem imagens disponíveis"
         })
+    
+    imagens = (
+        db.query(models.PlantImage)
+        .filter(models.PlantImage.plant_id == user_plant.id)  # importante!
+        .all()
+    )
 
-    
-    
-    
-        
+    informacoes = [
+        {
+            "caminho": path.replace("app/", "", 1),
+            "descricao": img.description,
+            "cor": img.color
+        }
+        for img in imagens
+        for path in img.image_path
+    ]
 
-    
-
-    
     return JSONResponse(content={
         "especie": user_plant.name,
         "descricao": user_plant.description,
-        "imagens": f"/uploads/{user_plant.image_path}",
-        "cor": user_plant.color
+        "imagens": informacoes
         
     })
 
@@ -489,48 +500,17 @@ async def register_plant(
         file_path = os.path.join("app/uploads", filename)
         with open(file_path, "wb") as buffer:
             buffer.write(file_bytes)
-        plant_image = (
-            db.query(models.PlantImage)
-            .filter(models.PlantImage.user_id == user_id, models.PlantImage.plant_id == existing_plant.id)
-            .first()
-        )
-        if plant_image:
-            if file_hash:
-                stmt = (
-                    update(models.PlantImage)
-                    .where(models.PlantImage.id == plant_image.id)
-                    .values(
-                        image_path=func.JSON_ARRAY_APPEND(
-                            func.COALESCE(models.PlantImage.image_path, func.JSON_ARRAY()),
-                            '$',
-                            file_path
-                        ),
-                        description=func.JSON_ARRAY_APPEND(
-                            func.COALESCE(models.PlantImage.description, func.JSON_ARRAY()),
-                            '$',
-                            descricao
-                        ),
-                        color=func.JSON_ARRAY_APPEND(
-                            func.COALESCE(models.PlantImage.color, func.JSON_ARRAY()),
-                            '$',
-                            cor
-                        )
-                    )
-                )
-                db.execute(stmt)
-                db.commit()
-        else:
-            # Novo registro do usuário
-            new_image = models.PlantImage(
-                name=nome,
-                description=[descricao],
-                image_path=[file_path] if file_path else [],
-                color=[cor],
-                plant_id=existing_plant.id,
-                user_id=user_id
+        plant_image = models.PlantImage(
+                    user_id=user_id,
+                    name=existing_plant.name,
+                    image_path=[file_path],
+                    description=[descricao],
+                    color = [cor],
+                    plant_id=existing_plant.id
             )
-            db.add(new_image)
-            db.commit()
+        db.add(plant_image)
+        db.commit()
+        
 
         return {"message": f"Planta '{nome}' já existe, contador atualizado e imagem salva!"}
 
@@ -627,18 +607,23 @@ async def update_plant_image(
         .first()
     )
     url = f"{imagem_anterior}"
-    caminho_local = url.replace("http://127.0.0.1:8000/", "")
+    caminho_local = url.replace("http://127.0.0.1:8000", "")
     if not imagem_db:
         return JSONResponse(status_code=404, content={"error": "Imagem anterior não encontrada"})
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    caminho_imagem_anterior = os.path.join(BASE_DIR, f"{caminho_local}")
+    base_dir = os.path.join(os.getcwd(), "app")  
+    caminho_imagem_anterior = os.path.join(base_dir, f"{caminho_local}")
+    caminho_relativo = caminho_imagem_anterior.replace("\\", "/").split("uploads/")[-1]  
+    caminho_imagem_absoluto = os.path.join(base_dir, "uploads", caminho_relativo)
 
+    if not os.path.exists(caminho_imagem_absoluto):
+        raise FileNotFoundError(f"Arquivo não encontrado: {caminho_imagem_absoluto}")
+    
     image_bytes = await nova_imagem.read()
     
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-    with open(caminho_imagem_anterior, "rb") as f:
+    with open(caminho_imagem_absoluto, "rb") as f:
         img = Image.open(f).convert("RGB")
     description = imagem_db.description
     
@@ -671,7 +656,43 @@ async def update_plant_image(
         ],
         stream=False
     )
-    
+   # if plant_image:
+    #        if file_hash:
+     #           stmt = (
+      #              update(models.PlantImage)
+       #             .where(models.PlantImage.id == plant_image.id)
+        #            .values(
+         #               image_path=func.JSON_ARRAY_APPEND(
+          #                  func.COALESCE(models.PlantImage.image_path, func.JSON_ARRAY()),
+           #                 '$',
+            #                file_path
+             #           ),
+              #          description=func.JSON_ARRAY_APPEND(
+               #             func.COALESCE(models.PlantImage.description, func.JSON_ARRAY()),
+                #            '$',
+                 #           descricao
+                  #      ),
+                   #     color=func.JSON_ARRAY_APPEND(
+                    #        func.COALESCE(models.PlantImage.color, func.JSON_ARRAY()),
+                     #       '$',
+                      #      cor
+                       # )
+                    #)
+                #)
+                #db.execute(stmt)
+                #db.commit()
+        #else:
+         #   # Novo registro do usuário
+          #  new_image = models.PlantImage(
+           #     name=nome,
+            #    description=[descricao],
+             #   image_path=[file_path] if file_path else [],
+              #  color=[cor],
+               # plant_id=existing_plant.id,
+                #user_id=user_id
+            #)
+            #db.add(new_image)
+            #db.commit()
     text_response = response.text
     match = re.search(r"\{[\s\S]*\}", text_response)
     if match:
